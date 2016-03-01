@@ -25,7 +25,7 @@ public class Main {
         String command = s.substring(0, index);
         switch (command){
             case "fs_init":
-                client = new Client();
+                client = new Client("194.210.220.94", 6978);
                 client.init();
                 break;
             case "fs_write":
