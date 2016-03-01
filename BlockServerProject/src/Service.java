@@ -53,7 +53,7 @@ public class Service {
 	
 	public static String putH(byte[] data)
 	{
-		
+		return null;
 	}
 	
 	public static String get(String id)
