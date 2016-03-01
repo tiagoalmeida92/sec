@@ -22,4 +22,11 @@ public class Security {
 		md.update(publicK.getEncoded());
 		return Base64.getEncoder().encodeToString(md.digest());
 	}
+	
+	public static String Hash(byte[] data) throws NoSuchAlgorithmException
+	{
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		md.update(data);
+		return Base64.getEncoder().encodeToString(md.digest());
+	}
 }
