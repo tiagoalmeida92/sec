@@ -1,20 +1,17 @@
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.Base64;
 
 import Utils.Constants;
+import Utils.Files;
 import Utils.Security;
 
 public class Service {
@@ -23,39 +20,42 @@ public class Service {
 	{
 		try {
 			if(!Security.Verify(data, signature, publicK))
-				return "Integrity failure or bad public key.";
+				return "[1] Integrity failure or bad public key.";
 		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-			return "Invalid key or signature exception.";
+			return "[1] Invalid key or signature exception.";
 		}
 		
-		String fileName;
+		String fileName,fileStatus;
 		try {
 			fileName = Security.GetPublicKeyHash(publicK);
 		} catch (NoSuchAlgorithmException e1) {
-			return "Invalid digest algorithm";
+			return "[1] Invalid digest algorithm.";
 		}
-		BufferedOutputStream writer = null;
-		try {			
-			writer = new BufferedOutputStream(new FileOutputStream(Constants.PKBLOCKPATH+fileName+Constants.PKBLOCKEXTENSION));
-			writer.write(data);
-			writer.close();
-			
-		} catch (IOException e) {
-			return "Writing file failure";
-		} finally {
-			try {
-				if (writer != null)
-					writer.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
+		
+		if((fileStatus = Files.WriteFile(Constants.PKBLOCKPATH+fileName+Constants.PKBLOCKEXTENSION,data)).equals("Success"))
+		{
+			return fileName;
 		}
-		return null;
+		return "[2] "+fileStatus;
 	}
 	
 	public static String putH(byte[] data)
 	{
-		return null;
+		String fileStatus;
+		if (data.length <= Constants.CBLOCKLENGTH)
+		{
+			try {
+				String contentHash = Security.Hash(data);
+				if((fileStatus = Files.WriteFile(Constants.CBLOCKPATH+contentHash+Constants.CBLOCKEXTENSION,data)).equals("Success"))
+				{
+					return contentHash;
+				}
+			} catch (NoSuchAlgorithmException e) {
+				return "[1] Algorithm deprecated.";
+			}
+			return "[2] "+fileStatus;
+		}
+		return "[3] data received its bigger than " + Constants.CBLOCKLENGTH + "bytes";
 	}
 	
 	public static byte[] get(String id)
