@@ -46,7 +46,7 @@ public class Service {
 		{
 			try {
 				String contentHash = Security.Hash(data);
-				if((fileStatus = Files.WriteFile(Constants.CBLOCKPATH+contentHash+Constants.CBLOCKEXTENSION,data)).equals("Success"))
+				if((fileStatus = Files.WriteFile(Constants.CBLOCKPATH+contentHash+Constants.CBLOCKEXTENSION, data)).equals("Success"))
 				{
 					return contentHash;
 				}
