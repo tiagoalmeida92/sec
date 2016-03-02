@@ -7,20 +7,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.Base64;
 
 public class Service {
 
-	private static final String PKBLOCKEXTENSION = ".pkblock";
-	private static final String CBLOCKEXTENSION = ".cblock";
-	private static final String PKBLOCKPATH = "c:\\secProject\\pkblocks";
-	private static final String CBLOCKPATH = "c:\\secProject\\cblocks";
+
 	
-	public static String putK(CommunicationParameters params)
+	public static String putK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		try {
-			if(!Security.Verify(params.Data, params.Signature, params.PublicK))
+			if(!Security.Verify(data, signature, publicK))
 				return "Integrity failure or bad public key.";
 		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
 			return "Invalid key or signature exception.";
@@ -28,14 +26,14 @@ public class Service {
 		
 		String fileName;
 		try {
-			fileName = Security.GetPublicKeyHash(params.PublicK);
+			fileName = Security.GetPublicKeyHash(publicK);
 		} catch (NoSuchAlgorithmException e1) {
 			return "Invalid digest algorithm";
 		}
 		BufferedWriter writer = null;
 		try {			
 			writer = new BufferedWriter(new FileWriter(PKBLOCKPATH+fileName+PKBLOCKEXTENSION));
-			writer.write(Base64.getEncoder().encodeToString(params.Data));
+			writer.write(Base64.getEncoder().encodeToString(data));
 			writer.close();
 			
 		} catch (IOException e) {
@@ -56,12 +54,13 @@ public class Service {
 		return null;
 	}
 	
-	public static String get(String id)
+	public static byte[] get(String id)
 	{
 		BufferedReader reader = null;
 		try {
 			String currLine = null,base64Content = null;
-			reader = new BufferedReader(new FileReader(PKBLOCKPATH+id+PKBLOCKEXTENSION));
+			FileReader fr = new FileReader(PKBLOCKPATH+id+PKBLOCKEXTENSION);
+			reader = new BufferedReader();
 			while ((currLine = reader.readLine()) != null) {
 				base64Content += currLine;
 			}

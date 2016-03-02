@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.net.*;
+import java.security.PublicKey;
 
 public class Main {
 
@@ -16,11 +17,28 @@ public class Main {
 				ObjectInputStream inputStream = new ObjectInputStream(connection.getInputStream());
 				
 				String method = (String) inputStream.readObject();
-				CommunicationParameters params = (CommunicationParameters) inputStream.readObject();
 				
+				byte[] data,signature;
+				PublicKey publicK;
+				String id;
 				switch(method)
 				{
-					case "put_k": Service.putK(params);break;
+					case "put_k": 
+						data = (byte[]) inputStream.readObject();
+						signature = (byte[]) inputStream.readObject();
+						publicK = (PublicKey) inputStream.readObject();
+						Service.putK(data,signature,publicK);
+						break;
+						
+					case "put_h":
+						data = (byte[]) inputStream.readObject();
+						Service.putH(data);
+						break;
+					
+					case "get"
+						id = (String) inputStream.readObject();
+						data = Service.get(id);
+						
 					default: break;
 				}
 			}
