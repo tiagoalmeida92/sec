@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.*;
 import java.security.PublicKey;
 
@@ -15,7 +16,7 @@ public class Main {
 			{
 				Socket connection = serverSocket.accept();
 				ObjectInputStream inputStream = new ObjectInputStream(connection.getInputStream());
-				
+				ObjectOutputStream outputStream = new ObjectOutputStream(connection.getOutputStream());
 				String method = (String) inputStream.readObject();
 				
 				byte[] data,signature;
@@ -27,18 +28,20 @@ public class Main {
 						data = (byte[]) inputStream.readObject();
 						signature = (byte[]) inputStream.readObject();
 						publicK = (PublicKey) inputStream.readObject();
-						Service.putK(data,signature,publicK);
+						id = Service.putK(data,signature,publicK);
+						outputStream.writeObject(id);
 						break;
 						
 					case "put_h":
 						data = (byte[]) inputStream.readObject();
-						Service.putH(data);
+						id = Service.putH(data);
+						outputStream.writeObject(id);
 						break;
 					
-					case "get"
+					case "get":
 						id = (String) inputStream.readObject();
 						data = Service.get(id);
-						
+						outputStream.writeObject(data);
 					default: break;
 				}
 			}
