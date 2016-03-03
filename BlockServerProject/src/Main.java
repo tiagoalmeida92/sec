@@ -1,8 +1,9 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.net.*;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.PublicKey;
 
 public class Main {
 
@@ -14,13 +15,32 @@ public class Main {
 			{
 				Socket connection = serverSocket.accept();
 				ObjectInputStream inputStream = new ObjectInputStream(connection.getInputStream());
-				
+				ObjectOutputStream outputStream = new ObjectOutputStream(connection.getOutputStream());
 				String method = (String) inputStream.readObject();
-				CommunicationParameters params = (CommunicationParameters) inputStream.readObject();
 				
+				byte[] data,signature;
+				PublicKey publicK;
+				String id;
 				switch(method)
 				{
-					case "put_k": Service.putK(params);break;
+					case "put_k": 
+						data = (byte[]) inputStream.readObject();
+						signature = (byte[]) inputStream.readObject();
+						publicK = (PublicKey) inputStream.readObject();
+						id = Service.putK(data,signature,publicK);
+						outputStream.writeObject(id);
+						break;
+						
+					case "put_h":
+						data = (byte[]) inputStream.readObject();
+						id = Service.putH(data);
+						outputStream.writeObject(id);
+						break;
+					
+					case "get":
+						id = (String) inputStream.readObject();
+						data = Service.get(id);
+						outputStream.writeObject(data);
 					default: break;
 				}
 			}

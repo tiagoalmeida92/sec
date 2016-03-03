@@ -1,71 +1,97 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.Base64;
+
+import Utils.Constants;
+import Utils.Files;
+import Utils.Security;
 
 public class Service {
 
-	private static final String PKBLOCKEXTENSION = ".pkblock";
-	private static final String CBLOCKEXTENSION = ".cblock";
-	private static final String PKBLOCKPATH = "c:\\secProject\\pkblocks";
-	private static final String CBLOCKPATH = "c:\\secProject\\cblocks";
-	
-	public static String putK(CommunicationParameters params)
+	public static String putK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		try {
-			if(!Security.Verify(params.Data, params.Signature, params.PublicK))
-				return "Integrity failure or bad public key.";
+			if(!Security.Verify(data, signature, publicK))
+				return "[1] Integrity failure or bad public key.";
 		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-			return "Invalid key or signature exception.";
+			return "[1] Invalid key or signature exception.";
 		}
 		
-		String fileName;
+		String fileName,fileStatus;
 		try {
-			fileName = Security.GetPublicKeyHash(params.PublicK);
+			fileName = Security.GetPublicKeyHash(publicK);
 		} catch (NoSuchAlgorithmException e1) {
-			return "Invalid digest algorithm";
+			return "[1] Invalid digest algorithm.";
 		}
-		BufferedWriter writer = null;
-		try {			
-			writer = new BufferedWriter(new FileWriter(PKBLOCKPATH+fileName+PKBLOCKEXTENSION));
-			writer.write(Base64.getEncoder().encodeToString(params.Data));
-			writer.close();
-			
-		} catch (IOException e) {
-			return "Writing file failure";
-		} finally {
-			try {
-				if (writer != null)
-					writer.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
+		
+		if((fileStatus = Files.WriteFile(Constants.PKBLOCKPATH+fileName+Constants.PKBLOCKEXTENSION,data)).equals("Success"))
+		{
+			return fileName;
 		}
-		return null;
+		return "[2] "+fileStatus;
 	}
 	
 	public static String putH(byte[] data)
 	{
-		return null;
+		String fileStatus;
+		if (data.length <= Constants.CBLOCKLENGTH)
+		{
+			try {
+				String contentHash = Security.Hash(data);
+				if((fileStatus = Files.WriteFile(Constants.CBLOCKPATH+contentHash+Constants.CBLOCKEXTENSION, data)).equals("Success"))
+				{
+					return contentHash;
+				}
+			} catch (NoSuchAlgorithmException e) {
+				return "[1] Algorithm deprecated.";
+			}
+			return "[2] "+fileStatus;
+		}
+		return "[3] data received its bigger than " + Constants.CBLOCKLENGTH + "bytes";
 	}
 	
-	public static String get(String id)
+	public static byte[] get(String id)
 	{
-		BufferedReader reader = null;
+		BufferedInputStream reader = null;
 		try {
-			String currLine = null,base64Content = null;
-			reader = new BufferedReader(new FileReader(PKBLOCKPATH+id+PKBLOCKEXTENSION));
-			while ((currLine = reader.readLine()) != null) {
-				base64Content += currLine;
+			
+			//Get ContentBlock data
+			byte[] data = new byte[Constants.CBLOCKLENGTH];
+			reader = new BufferedInputStream(new FileInputStream(Constants.CBLOCKPATH+id+Constants.CBLOCKEXTENSION));
+			reader.read(data, 0, data.length);
+			reader.close();
+			return data;
+			
+		} catch (FileNotFoundException e) {
+			
+			//Get PublicKeyBlock data
+			String pkFilePath = Constants.PKBLOCKPATH+id+Constants.PKBLOCKEXTENSION;
+			File file = new File(pkFilePath);
+			if (file.exists())
+			{
+				byte[] data = new byte[(int) file.length()];
+				try {
+					reader = new BufferedInputStream(new FileInputStream(pkFilePath));
+					reader.read(data, 0, data.length);
+					reader.close();
+				} catch (FileNotFoundException e2) {
+					return null;
+				} catch (IOException e1) {
+					return null;
+				}
+				return data;
 			}
-			return base64Content;
+			else 
+				return null;
+			
 		} catch (IOException e) {
 			return null;
 		} finally {
@@ -73,7 +99,7 @@ public class Service {
 				if (reader != null)
 					reader.close();
 			} catch (IOException ex) {
-				ex.printStackTrace();
+				return null;
 			}
 		}
 	}
