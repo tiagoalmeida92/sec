@@ -10,17 +10,21 @@ public class Main {
 	public static void main(String[] args)
 	{
 		try {
+			Socket connection;
 			ServerSocket serverSocket = new ServerSocket(6978);
+			ObjectInputStream inputStream;
+			ObjectOutputStream outputStream;
+			byte[] data,signature;
+			PublicKey publicK;
+			String method,id;
+			
 			while(true)
 			{
-				Socket connection = serverSocket.accept();
-				ObjectInputStream inputStream = new ObjectInputStream(connection.getInputStream());
-				ObjectOutputStream outputStream = new ObjectOutputStream(connection.getOutputStream());
-				String method = (String) inputStream.readObject();
+				connection = serverSocket.accept();
+				inputStream = new ObjectInputStream(connection.getInputStream());
+				outputStream = new ObjectOutputStream(connection.getOutputStream());
+				method = (String) inputStream.readObject();
 				
-				byte[] data,signature;
-				PublicKey publicK;
-				String id;
 				switch(method)
 				{
 					case "put_k": 
