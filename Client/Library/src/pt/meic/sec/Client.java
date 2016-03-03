@@ -4,9 +4,12 @@
 package pt.meic.sec;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
+
+
 
 public class Client {
 
@@ -15,57 +18,47 @@ public class Client {
     private final String hostname;
     private final int portNumber;
 
-    private PublicKey publicKey;
+    private KeyPair keyPair;
     private Socket socket;
-    private ObjectOutputStream socketStream;
+    private ObjectInputStream socketInputStream;
+    private ObjectOutputStream socketOutputStream;
+    private String publicKeyBlockId;
+
 
     public Client(String hostname, int portNumber){
         this.hostname = hostname;
         this.portNumber = portNumber;
-
     }
 
     public void init() {
-        KeyPair keyPair = generateKeyPair();
-        publicKey = keyPair.getPublic();
         try {
+            keyPair = SecurityUtils.GenerateKeyPair();
             socket = new Socket(hostname, portNumber);
-            socketStream = new ObjectOutputStream(socket.getOutputStream());
-            writePublicKeyBlock(publicKey);
-        } catch (IOException e) {
+            socketInputStream = new ObjectInputStream(socket.getInputStream());
+            socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            writePublicKeyBlock(keyPair.getPublic());
+            publicKeyBlockId = (String)socketInputStream.readObject();
+        } catch (NoSuchAlgorithmException | IOException |SignatureException | InvalidKeyException | ClassNotFoundException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
 
+    private void writePublicKeyBlock(PublicKey publicKey) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
+        byte[] data = publicKey.getEncoded();
+        socketOutputStream.writeObject(data);
+        socketOutputStream.writeObject(SecurityUtils.Sign(data, keyPair));
+        socketOutputStream.writeObject(publicKey);
+        socketOutputStream.flush();
+    }
+
+    public void write(int position, int size, String contents) {
 
     }
 
-    private void writePublicKeyBlock(PublicKey publicKey) throws IOException {
-        CommunicationParameters parameters = new CommunicationParameters(null, null, publicKey);
-        socketStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
-        socketStream.writeObject(publicKey);
-        socketStream.flush();
+    public String read(int id, int position, int size) {
+
+        return "";
     }
-
-    private KeyPair generateKeyPair() {
-        // Create a key pair generator
-        KeyPairGenerator keyGen;
-        // Initialize the key pair generator
-        SecureRandom random = null;
-        try {
-            random = SecureRandom.getInstance("SHA1PRNG", "SUN");
-            keyGen = KeyPairGenerator.getInstance("DSA", "SUN");
-            keyGen.initialize(1024, random);
-            // Generate the key pair
-            KeyPair pair = keyGen.generateKeyPair();
-            return pair;
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-
-
-
-    }
-
 }

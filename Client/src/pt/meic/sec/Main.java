@@ -25,15 +25,14 @@ public class Main {
         String command = s.substring(0, index);
         switch (command){
             case "fs_init":
-                client = new Client("localhost", 1111);
-                client.init();
+                init();
                 break;
             case "fs_write":
-
+                executeWrite(s);
                 break;
 
             case "fs_read":
-
+                executeRead(s);
                 break;
             default:
                 out.println("Command not found");
@@ -41,10 +40,42 @@ public class Main {
         }
     }
 
+    private static void init() {
+        client = new Client("localhost", 6978);
+        client.init();
+    }
+
+    private static void executeWrite(String s) {
+        //fs_write <pos> <size> <contents>
+        String[] tokens = s.split(" ");
+        if(tokens.length != 4){
+            out.println("Invalid parameters");
+            return;
+        }
+        int position = Integer.parseInt(tokens[1]);
+        int size = Integer.parseInt(tokens[2]);
+        String contents = tokens[3];
+        client.write(position, size, contents);
+    }
+
+    private static void executeRead(String s) {
+        //fs_read <id> <pos> <size>
+        String[] tokens = s.split(" ");
+        if(tokens.length != 4){
+            out.println("Invalid parameters");
+            return;
+        }
+        int id = Integer.parseInt(tokens[1]);
+        int position = Integer.parseInt(tokens[2]);
+        int size = Integer.parseInt(tokens[3]);
+        String contents = client.read(id, position, size);
+        out.println(contents);
+    }
+
     private static void displayCommands() {
         out.println("COMMANDS:");
         out.println("fs_init\nCreate new filesystem user\n");
-        out.println("fs_write <pos> <size> <contents>\nWrite a file\n");
-        out.println("fs_read <id> <pos> <size> <contents>\nRead a file\n");
+        out.println("fs_write <pos> <size> <contents>\nWrite to file\n");
+        out.println("fs_read <id> <pos> <size> \nRead file\n");
     }
 }
