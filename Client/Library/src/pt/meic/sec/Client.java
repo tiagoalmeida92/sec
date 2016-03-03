@@ -43,7 +43,7 @@ public class Client {
     private void writePublicKeyBlock(PublicKey publicKey) throws IOException {
         CommunicationParameters parameters = new CommunicationParameters(null, null, publicKey);
         socketStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
-        socketStream.writeObject(parameters);
+        socketStream.writeObject(publicKey);
         socketStream.flush();
     }
 
