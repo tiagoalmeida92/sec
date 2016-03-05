@@ -8,7 +8,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.util.Base64;
 
 public class SecurityUtils
 {
@@ -35,17 +34,17 @@ public class SecurityUtils
         return sig.sign();
     }
 
-    public static String GetPublicKeyHash(PublicKey publicK) throws NoSuchAlgorithmException
-    {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(publicK.getEncoded());
-        return Base64.getEncoder().encodeToString(md.digest());
-    }
-
-    public static String Hash(byte[] data) throws NoSuchAlgorithmException
-    {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(data);
-        return Base64.getEncoder().encodeToString(md.digest());
-    }
+//    public static String GetPublicKeyHash(PublicKey publicK) throws NoSuchAlgorithmException
+//    {
+//        MessageDigest md = MessageDigest.getInstance("SHA-256");
+//        md.update(publicK.getEncoded());
+//        return Base64.getEncoder().encodeToString(md.digest());
+//    }
+//
+//    public static String Hash(byte[] data) throws NoSuchAlgorithmException
+//    {
+//        MessageDigest md = MessageDigest.getInstance("SHA-256");
+//        md.update(data);
+//        return Base64.getEncoder().encodeToString(md.digest());
+//    }
 }

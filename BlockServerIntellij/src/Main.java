@@ -9,8 +9,9 @@ public class Main {
 
 	public static void main(String[] args)
 	{
+		System.out.println("Block server started.");
 		try {
-			ServerSocket serverSocket = new ServerSocket(6978);
+			ServerSocket serverSocket = new ServerSocket(6979);
 			while(true)
 			{
 				Socket connection = serverSocket.accept();
@@ -45,7 +46,7 @@ public class Main {
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {
-			
+			throw new RuntimeException(e);
 		}
 	}
 }

@@ -14,6 +14,8 @@ import java.security.*;
 public class Client {
 
     private static final String PUT_PUBLIC_KEY_BLOCK = "put_k";
+    private static final String PUT_FILE_CONTENT_BLOCK = "put_h";
+    private static final String READ_BLOCK = "get";
 
     private final String hostname;
     private final int portNumber;
@@ -36,29 +38,42 @@ public class Client {
             socket = new Socket(hostname, portNumber);
             socketInputStream = new ObjectInputStream(socket.getInputStream());
             socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            writePublicKeyBlock(keyPair.getPublic());
+            writePublicKeyBlock(keyPair.getPublic(), "");
             publicKeyBlockId = (String)socketInputStream.readObject();
         } catch (NoSuchAlgorithmException | IOException |SignatureException | InvalidKeyException | ClassNotFoundException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    private void writePublicKeyBlock(PublicKey publicKey) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    public String write(int position, int size, String contents)  {
+        try {
+            socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
+            socketOutputStream.writeObject(contents.getBytes());
+            return (String) socketInputStream.readObject();
+        }catch (IOException | ClassNotFoundException  ex){
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public String read(String id, int position, int size) {
+        try {
+            socketOutputStream.writeObject(READ_BLOCK);
+            socketOutputStream.writeObject(id);
+            return (String) socketInputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void writePublicKeyBlock(PublicKey publicKey, String content) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
-        byte[] data = publicKey.getEncoded();
+        byte[] data = content.getBytes();
         socketOutputStream.writeObject(data);
-        socketOutputStream.writeObject(SecurityUtils.Sign(data, keyPair));
+        byte[] signature = SecurityUtils.Sign(data, keyPair);
+        socketOutputStream.writeObject(signature);
         socketOutputStream.writeObject(publicKey);
         socketOutputStream.flush();
     }
 
-    public void write(int position, int size, String contents) {
 
-    }
-
-    public String read(int id, int position, int size) {
-
-        return "";
-    }
 }

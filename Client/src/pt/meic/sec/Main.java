@@ -41,7 +41,7 @@ public class Main {
     }
 
     private static void init() {
-        client = new Client("localhost", 6978);
+        client = new Client(null, 6979);
         client.init();
     }
 
@@ -55,7 +55,8 @@ public class Main {
         int position = Integer.parseInt(tokens[1]);
         int size = Integer.parseInt(tokens[2]);
         String contents = tokens[3];
-        client.write(position, size, contents);
+        String blockId = client.write(position, size, contents);
+        out.println("Write success! Created block "+blockId);
     }
 
     private static void executeRead(String s) {
@@ -65,10 +66,10 @@ public class Main {
             out.println("Invalid parameters");
             return;
         }
-        int id = Integer.parseInt(tokens[1]);
+        String blockId = tokens[1];
         int position = Integer.parseInt(tokens[2]);
         int size = Integer.parseInt(tokens[3]);
-        String contents = client.read(id, position, size);
+        String contents = client.read(blockId, position, size);
         out.println(contents);
     }
 
