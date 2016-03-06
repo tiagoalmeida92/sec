@@ -9,6 +9,10 @@ public class Files {
 		BufferedOutputStream writer = null;
 		try {
 			File file = new File(path);
+			File parentFile = file.getParentFile();
+			if(!parentFile.exists()){
+				parentFile.mkdirs();
+			}
 			boolean created = file.createNewFile();
 			writer = new BufferedOutputStream(new FileOutputStream(file));
 			writer.write(data);
