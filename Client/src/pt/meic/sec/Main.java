@@ -12,7 +12,7 @@ public class Main {
         displayCommands();
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            String s = scanner.next();
+            String s = scanner.nextLine();
             handleCommand(s);
         }
     }
@@ -41,7 +41,7 @@ public class Main {
     }
 
     private static void init() {
-        client = new Client(null, 6979);
+        client = new Client(null, 1234);
         client.init();
     }
 
@@ -69,8 +69,8 @@ public class Main {
         String blockId = tokens[1];
         int position = Integer.parseInt(tokens[2]);
         int size = Integer.parseInt(tokens[3]);
-        String contents = client.read(blockId, position, size);
-        out.println(contents);
+        byte[] contents = client.read(blockId, position, size);
+        out.println(new String(contents));
     }
 
     private static void displayCommands() {

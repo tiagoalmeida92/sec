@@ -9,16 +9,17 @@ public class Main {
 
 	public static void main(String[] args)
 	{
-		System.out.println("Block server started.");
+		System.out.println("Block server started...");
 		try {
-			ServerSocket serverSocket = new ServerSocket(6979);
+			ServerSocket serverSocket = new ServerSocket(1234);
+			Socket connection = serverSocket.accept();
+			ObjectInputStream inputStream = new ObjectInputStream(connection.getInputStream());
+			ObjectOutputStream outputStream = new ObjectOutputStream(connection.getOutputStream());
 			while(true)
 			{
-				Socket connection = serverSocket.accept();
-				ObjectInputStream inputStream = new ObjectInputStream(connection.getInputStream());
-				ObjectOutputStream outputStream = new ObjectOutputStream(connection.getOutputStream());
+
 				String method = (String) inputStream.readObject();
-				
+
 				byte[] data,signature;
 				PublicKey publicK;
 				String id;

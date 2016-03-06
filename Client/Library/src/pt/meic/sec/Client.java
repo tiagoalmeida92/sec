@@ -36,8 +36,8 @@ public class Client {
         try {
             keyPair = SecurityUtils.GenerateKeyPair();
             socket = new Socket(hostname, portNumber);
-            socketInputStream = new ObjectInputStream(socket.getInputStream());
             socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            socketInputStream = new ObjectInputStream(socket.getInputStream());
             writePublicKeyBlock(keyPair.getPublic(), "");
             publicKeyBlockId = (String)socketInputStream.readObject();
         } catch (NoSuchAlgorithmException | IOException |SignatureException | InvalidKeyException | ClassNotFoundException e) {
@@ -55,11 +55,11 @@ public class Client {
         }
     }
 
-    public String read(String id, int position, int size) {
+    public byte[] read(String id, int position, int size) {
         try {
             socketOutputStream.writeObject(READ_BLOCK);
             socketOutputStream.writeObject(id);
-            return (String) socketInputStream.readObject();
+            return (byte[]) socketInputStream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
