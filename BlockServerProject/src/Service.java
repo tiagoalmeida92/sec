@@ -1,15 +1,14 @@
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import Utils.Constants;
 import Utils.Files;
@@ -105,12 +104,27 @@ public class Service {
 		}
 	}
 
-	public static void GarbageCollection() {
+	public static void filesGarbageCollection() 
+	{
 		ArrayList<File> contentBlock = new ArrayList<File>();
 		ArrayList<File> publicBlock = new ArrayList<File>();
 		Files.ListFiles(Constants.CBLOCKPATH, contentBlock);
-		
 		Files.ListFiles(Constants.PKBLOCKPATH, publicBlock);
-		
+		Iterator<File> iterator = contentBlock.iterator();
+		while(iterator.hasNext())
+		{
+			File contentFile = iterator.next();
+			String id =contentFile.getName().replace(Constants.CBLOCKEXTENSION, "");
+			for(File publicKFile : publicBlock)
+			{
+				if(Files.FindOnContent(publicKFile,id)){
+					iterator.remove();
+				}
+			}
+		}
+		for(File f : contentBlock)
+		{
+			f.delete();
+		}
 	}
 }

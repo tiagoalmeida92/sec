@@ -2,9 +2,11 @@ package Utils;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Files {
 
@@ -39,5 +41,21 @@ public class Files {
 	        	ListFiles(file.getAbsolutePath(), files);
 	        }
 	    }
+	}
+	
+	public static boolean FindOnContent(File file, String id)
+	{
+		Scanner scanner = null;
+		try {
+			scanner = new Scanner(file).useDelimiter("\\Z");
+			String contents = scanner.next();
+			return contents.indexOf(id) != -1;
+		} catch (FileNotFoundException e) {
+			return false;
+		}finally{
+			if(scanner != null)
+				scanner.close();
+		}
+	   
 	}
 }

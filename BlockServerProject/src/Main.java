@@ -46,17 +46,14 @@ public class Main {
 									id = (String) inputStream.readObject();
 									data = Service.get(id);
 									outputStream.writeObject(data);
-								default: break;
+									break;
+								default: 
+									Service.filesGarbageCollection();
+									break;
 							}
 						} catch (IOException | ClassNotFoundException e) {
 							
 						}
-					}
-				}).start();
-				
-				new Thread(new Runnable() {
-					public void run(){
-						Service.GarbageCollection();
 					}
 				}).start();
 			}
