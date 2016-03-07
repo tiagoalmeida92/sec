@@ -9,6 +9,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.ArrayList;
 
 import Utils.Constants;
 import Utils.Files;
@@ -102,5 +103,14 @@ public class Service {
 				return null;
 			}
 		}
+	}
+
+	public static void GarbageCollection() {
+		ArrayList<File> contentBlock = new ArrayList<File>();
+		ArrayList<File> publicBlock = new ArrayList<File>();
+		Files.ListFiles(Constants.CBLOCKPATH, contentBlock);
+		
+		Files.ListFiles(Constants.PKBLOCKPATH, publicBlock);
+		
 	}
 }

@@ -1,8 +1,10 @@
 package Utils;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Files {
 
@@ -23,5 +25,19 @@ public class Files {
 				return null;
 			}
 		}
+	}
+	
+	public static void ListFiles(String directoryName, ArrayList<File> files) {
+	    File directory = new File(directoryName);
+
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    for (File file : fList) {
+	        if (file.isFile()) {
+	            files.add(file);
+	        } else if (file.isDirectory()) {
+	        	ListFiles(file.getAbsolutePath(), files);
+	        }
+	    }
 	}
 }
