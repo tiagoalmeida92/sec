@@ -1,3 +1,5 @@
+package pt.meic.sec;
+
 public class Constants {
 
 	//File paths

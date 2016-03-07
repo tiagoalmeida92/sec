@@ -55,8 +55,7 @@ public class Main {
         int position = Integer.parseInt(tokens[1]);
         int size = Integer.parseInt(tokens[2]);
         String contents = tokens[3];
-        String blockId = client.write(position, size, contents);
-        out.println("Write success! Created block "+blockId);
+        client.write(position, size, contents);
     }
 
     private static void executeRead(String s) {

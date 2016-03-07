@@ -8,7 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
-
+import java.util.Arrays;
 
 
 public class Client {
@@ -27,7 +27,7 @@ public class Client {
     private String publicKeyBlockId;
 
 
-    public Client(String hostname, int portNumber){
+    public Client(String hostname, int portNumber) {
         this.hostname = hostname;
         this.portNumber = portNumber;
     }
@@ -39,30 +39,52 @@ public class Client {
             socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
             socketInputStream = new ObjectInputStream(socket.getInputStream());
             writePublicKeyBlock(keyPair.getPublic(), "");
-            publicKeyBlockId = (String)socketInputStream.readObject();
-        } catch (NoSuchAlgorithmException | IOException |SignatureException | InvalidKeyException | ClassNotFoundException e) {
+            publicKeyBlockId = (String) socketInputStream.readObject();
+        } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String write(int position, int size, String contents)  {
+    public void write(int position, int size, String contents) {
         try {
-            socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
-            socketOutputStream.writeObject(contents.getBytes());
-            return (String) socketInputStream.readObject();
-        }catch (IOException | ClassNotFoundException  ex){
+            String contentBlockId = writeContentBlock(contents);
+            byte[] headerBlock = readBlock(publicKeyBlockId);
+            //headerBlockString is a comma separated list
+            String headerBlockString = new String(headerBlock);
+            int blockPosition = position / Constants.CBLOCKLENGTH;
+            String[] ids = headerBlockString.split(",");
+            if (blockPosition >= ids.length) {
+                headerBlockString += "," + contentBlockId;
+            }else{
+                ids[blockPosition] = contentBlockId;
+                headerBlockString = String.join(",", ids);
+            }
+            writePublicKeyBlock(keyPair.getPublic(), headerBlockString);
+
+        } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException  ex) {
             throw new RuntimeException(ex);
         }
     }
 
+    private String writeContentBlock(String contents) throws IOException, ClassNotFoundException {
+        socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
+        socketOutputStream.writeObject(contents.getBytes());
+        return (String) socketInputStream.readObject();
+    }
+
     public byte[] read(String id, int position, int size) {
         try {
-            socketOutputStream.writeObject(READ_BLOCK);
-            socketOutputStream.writeObject(id);
-            return (byte[]) socketInputStream.readObject();
+            byte[] bytes = readBlock(id);
+            return bytes;
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private byte[] readBlock(String id) throws IOException, ClassNotFoundException {
+        socketOutputStream.writeObject(READ_BLOCK);
+        socketOutputStream.writeObject(id);
+        return (byte[]) socketInputStream.readObject();
     }
 
     private void writePublicKeyBlock(PublicKey publicKey, String content) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
