@@ -1,8 +1,12 @@
 package Utils;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Files {
 
@@ -23,5 +27,35 @@ public class Files {
 				return null;
 			}
 		}
+	}
+	
+	public static void ListFiles(String directoryName, ArrayList<File> files) {
+	    File directory = new File(directoryName);
+
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    for (File file : fList) {
+	        if (file.isFile()) {
+	            files.add(file);
+	        } else if (file.isDirectory()) {
+	        	ListFiles(file.getAbsolutePath(), files);
+	        }
+	    }
+	}
+	
+	public static boolean FindOnContent(File file, String id)
+	{
+		Scanner scanner = null;
+		try {
+			scanner = new Scanner(file).useDelimiter("\\Z");
+			String contents = scanner.next();
+			return contents.indexOf(id) != -1;
+		} catch (FileNotFoundException e) {
+			return false;
+		}finally{
+			if(scanner != null)
+				scanner.close();
+		}
+	   
 	}
 }
