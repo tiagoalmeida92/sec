@@ -38,45 +38,61 @@ public class Client {
             socket = new Socket(hostname, portNumber);
             socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
             socketInputStream = new ObjectInputStream(socket.getInputStream());
-            writePublicKeyBlock(keyPair.getPublic(), "");
-            publicKeyBlockId = (String) socketInputStream.readObject();
+            publicKeyBlockId = writePublicKeyBlock(keyPair.getPublic(), new String[0]);
+            System.out.println("File created with id: "+publicKeyBlockId);
         } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void write(int position, int size, String contents) {
+    public void write(int position, int size, byte[] contents) {
         try {
-            String contentBlockId = writeContentBlock(contents);
-            byte[] headerBlock = readBlock(publicKeyBlockId);
-            //headerBlockString is a comma separated list
-            String headerBlockString = new String(headerBlock);
-            int blockPosition = position / Constants.CBLOCKLENGTH;
-            String[] ids = headerBlockString.split(",");
-            if (blockPosition >= ids.length) {
-                headerBlockString += "," + contentBlockId;
-            }else{
-                ids[blockPosition] = contentBlockId;
-                headerBlockString = String.join(",", ids);
-            }
-            writePublicKeyBlock(keyPair.getPublic(), headerBlockString);
+            String[] ids = getContentBlockReferences(publicKeyBlockId);
 
-        } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException  ex) {
+            int startIndex = position / Constants.CBLOCKLENGTH;
+            int endIndex = startIndex + (size / Constants.CBLOCKLENGTH);
+
+            if (endIndex >= ids.length) {
+                ids = Utils.concat(ids, new String[endIndex - ids.length + 1]);
+            }
+
+            for (int i = startIndex, pos = 0; i <= endIndex && pos < size; i++, pos += Constants.CBLOCKLENGTH) {
+                int posEnd = pos + Constants.CBLOCKLENGTH;
+                byte[] contentChunk = Arrays.copyOfRange(contents, pos, posEnd);
+                String contentBlockId = writeContentBlock(contentChunk);
+                ids[i] = contentBlockId;
+            }
+            //TODO add signature to header block
+
+            writePublicKeyBlock(keyPair.getPublic(), ids);
+
+        } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    private String writeContentBlock(String contents) throws IOException, ClassNotFoundException {
-        socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
-        socketOutputStream.writeObject(contents.getBytes());
-        return (String) socketInputStream.readObject();
-    }
 
+    //TODO missing calculation to cut beginning and ending of byte[]
+    //Tip use modulus
     public byte[] read(String id, int position, int size) {
         try {
-            byte[] bytes = readBlock(id);
-            return bytes;
-        } catch (IOException | ClassNotFoundException e) {
+            String[] contentBlockIds = getContentBlockReferences(id);
+            int startIndex = position / Constants.CBLOCKLENGTH;
+            int endIndex = startIndex + (size / Constants.CBLOCKLENGTH);
+            if (startIndex < contentBlockIds.length) {
+                byte[] result = new byte[0];
+                for (int i = startIndex; i < contentBlockIds.length && i <= endIndex; ++i) {
+                    String blockHash = contentBlockIds[i];
+                    byte[] bytes = readBlock(blockHash);
+                    if (SecurityUtils.verifyHash(bytes, blockHash)) {
+                        result = Utils.concat(result, bytes);
+                    }
+
+                }
+                return result;
+            }
+            return null;
+        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException|SignatureException|InvalidKeyException e) {
             throw new RuntimeException(e);
         }
     }
@@ -87,14 +103,40 @@ public class Client {
         return (byte[]) socketInputStream.readObject();
     }
 
-    private void writePublicKeyBlock(PublicKey publicKey, String content) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException {
+        socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
+        socketOutputStream.writeObject(contents);
+        return (String) socketInputStream.readObject();
+    }
+
+    /*
+                            PUBLIC KEY BLOCK STRUCTURE
+             ---------------------------------------------------------
+            |   SIGNATURE OF HASHES , CONTENT_HASH_1, CONTENT_HASH_2, etc |
+             ---------------------------------------------------------
+     */
+    private String writePublicKeyBlock(PublicKey publicKey, String[] ids) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, ClassNotFoundException {
         socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
+        String content = String.join(",", ids);
         byte[] data = content.getBytes();
         socketOutputStream.writeObject(data);
         byte[] signature = SecurityUtils.Sign(data, keyPair);
         socketOutputStream.writeObject(signature);
         socketOutputStream.writeObject(publicKey);
-        socketOutputStream.flush();
+        return (String) socketInputStream.readObject();
+    }
+
+    private String[] getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        byte[] pkBlock = readBlock(publicKeyBlockId);
+        String pkBlockStr = new String(pkBlock);
+        String[] ids = pkBlockStr.split(",");
+        return ids;
+//TODO
+//        String signature = ids[0];
+//        if(SecurityUtils.Verify(pkBlock, signature.getBytes(), publicKeyBlockId)){
+//            return Arrays.copyOfRange(ids, 1, ids.length);
+//        }
+//        return new String [0];
     }
 
 

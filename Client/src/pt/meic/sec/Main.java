@@ -55,7 +55,7 @@ public class Main {
         int position = Integer.parseInt(tokens[1]);
         int size = Integer.parseInt(tokens[2]);
         String contents = tokens[3];
-        client.write(position, size, contents);
+        client.write(position, size, contents.getBytes());
     }
 
     private static void executeRead(String s) {
