@@ -11,4 +11,9 @@ public class Constants {
 	//Content blocks length
 	public static final int CBLOCKLENGTH = 10000; //10KB
 	
+	//Keystore alias
+	public static final String PUBLICKEYALIAS = "publicKeyAlias";
+	public static final String PRIVATEKEYALIAS = "privateKeyAlias";
+	public static final String KEYSTOREEXTENSION = ".jks";
+	
 }

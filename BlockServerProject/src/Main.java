@@ -48,9 +48,9 @@ public class Main {
 									outputStream.writeObject(data);
 									break;
 								default: 
-									Service.filesGarbageCollection();
 									break;
 							}
+							Service.filesGarbageCollection();
 						} catch (IOException | ClassNotFoundException e) {
 							
 						}

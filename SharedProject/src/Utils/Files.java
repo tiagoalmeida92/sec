@@ -43,6 +43,14 @@ public class Files {
 	    }
 	}
 	
+	public static boolean Exists(String filename)
+	{
+		File currentDirFile = new File("");
+		String currentProjectDir = currentDirFile.getAbsolutePath();
+		File file = new File(currentProjectDir+"\\"+filename);
+		return file.exists();
+	}
+	
 	public static boolean FindOnContent(File file, String id)
 	{
 		Scanner scanner = null;
