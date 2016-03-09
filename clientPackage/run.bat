@@ -1,2 +1,1 @@
-cd bin
-java pt.meic.sec.Main
+java -cp bin pt.meic.sec.Main
