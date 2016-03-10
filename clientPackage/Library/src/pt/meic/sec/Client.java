@@ -57,16 +57,25 @@ public class Client {
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (size / Constants.CBLOCKLENGTH);
 
-            if (endIndex >= ids.size()) {
-
+            //Pad file with 0s
+            if(endIndex >= ids.size()){
+                String contentBlockId = writeContentBlock(new byte[0]);
+                while(endIndex>= ids.size()){
+                    ids.add(contentBlockId);
+                }
             }
 
-            for (int i = startIndex, pos = 0; i <= endIndex && pos < size; i++, pos += Constants.CBLOCKLENGTH) {
-                int posEnd = pos + Constants.CBLOCKLENGTH;
-                byte[] contentChunk = Arrays.copyOfRange(contents, pos, posEnd);
-                String contentBlockId = writeContentBlock(contentChunk);
-                ids.add(i, contentBlockId);
-                //TODO replace old blocks
+            int contentsIdx = 0;
+            int blockIdx = position % Constants.CBLOCKLENGTH;
+             for (int i = startIndex; i <= endIndex; i++) {
+                byte[] block = readBlock(ids.get(i));
+
+                while ((blockIdx < block.length && contentsIdx < contents.length)){
+                    block[blockIdx++] = contents[contentsIdx++];
+                }
+                String contentBlockId = writeContentBlock(block);
+                ids.set(i, contentBlockId);
+                blockIdx = 0;
             }
             writePublicKeyBlock(keyPair.getPublic(), ids);
 
@@ -75,14 +84,13 @@ public class Client {
         }
     }
 
-
     //TODO missing calculation to cut beginning and ending of byte[]
     //Tip use modulus
-    public byte[] read(String id, int position, int size) {
+    public byte[] read(String id, int position, int readSize) {
         try {
             List<String> contentBlockIds = getContentBlockReferences(id);
             int startIndex = position / Constants.CBLOCKLENGTH;
-            int endIndex = startIndex + (size / Constants.CBLOCKLENGTH);
+            int endIndex = startIndex + (readSize / Constants.CBLOCKLENGTH);
             if (startIndex < contentBlockIds.size()) {
                 byte[] result = new byte[0];
                 for (int i = startIndex; i < contentBlockIds.size() && i <= endIndex; ++i) {
@@ -92,6 +100,19 @@ public class Client {
                         result = Utils.concat(result, bytes);
                     }
 
+                }
+                //Check for weird position cases
+                int modulus = position % Constants.CBLOCKLENGTH;
+                if(modulus != 0 ){
+                    if(modulus <= result.length){
+                        result = Arrays.copyOfRange(result, modulus, result.length);
+                    }else{
+                        result = new byte[0];
+                    }
+                }
+                //last block is to be cut
+                if(result.length > readSize){
+                    result = Arrays.copyOfRange(result, 0, readSize);
                 }
                 return result;
             }
@@ -109,19 +130,17 @@ public class Client {
 
     private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException {
         socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
-        socketOutputStream.writeObject(contents);
+        socketOutputStream.writeObject(Arrays.copyOf(contents, Constants.CBLOCKLENGTH));
         return (String) socketInputStream.readObject();
     }
 
     /*
                             PUBLIC KEY BLOCK STRUCTURE
-             ---------------------------------------------------------
-            |   BLOCK SIGNATURE 128 bytes
-            |   PUBLIC KEY 162 bytes
-            |   BLOCK IDS size is multiple of 64 bytes
-
-
-             ---------------------------------------------------------
+             -----------------------------------------------------------
+            |   BLOCK SIGNATURE 128 bytes                               |
+            |   PUBLIC KEY 162 bytes                                    |
+            |   BLOCK IDS size is multiple of 64 bytes                  |
+             -----------------------------------------------------------
      */
     private String writePublicKeyBlock(PublicKey publicKey, List<String> ids) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, ClassNotFoundException {
         socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
