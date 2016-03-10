@@ -35,9 +35,7 @@ public class Client {
     public String init() {
         try {
             keyPair = SecurityUtils.GenerateKeyPair();
-            socket = new Socket(hostname, portNumber);
-            socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
-            socketInputStream = new ObjectInputStream(socket.getInputStream());
+            connectToServer();
             publicKeyBlockId = writePublicKeyBlock(keyPair.getPublic(), new ArrayList<>());
             if(publicKeyBlockId.equals(SecurityUtils.Hash(keyPair.getPublic().getEncoded()))){
                 return publicKeyBlockId;
@@ -50,8 +48,15 @@ public class Client {
         }
     }
 
+    private void connectToServer() throws IOException {
+        socket = new Socket(hostname, portNumber);
+        socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
+        socketInputStream = new ObjectInputStream(socket.getInputStream());
+    }
+
     public void write(int position, int size, byte[] contents) {
         try {
+            connectToServer();
             List<String> ids = getContentBlockReferences(publicKeyBlockId);
 
             int startIndex = position / Constants.CBLOCKLENGTH;
@@ -84,10 +89,9 @@ public class Client {
         }
     }
 
-    //TODO missing calculation to cut beginning and ending of byte[]
-    //Tip use modulus
     public byte[] read(String id, int position, int readSize) {
         try {
+            connectToServer();
             List<String> contentBlockIds = getContentBlockReferences(id);
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (readSize / Constants.CBLOCKLENGTH);
