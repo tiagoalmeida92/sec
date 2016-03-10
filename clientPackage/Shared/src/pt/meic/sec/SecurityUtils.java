@@ -80,4 +80,18 @@ public class SecurityUtils
 
         return null;
     }
+
+    public static PublicKey getKey(byte[] publicKeyBytes) {
+        try{
+            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(publicKeyBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            return kf.generatePublic(X509publicKey);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

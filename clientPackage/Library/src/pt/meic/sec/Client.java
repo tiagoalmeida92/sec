@@ -8,7 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
-import java.util.Arrays;
+import java.util.*;
 
 
 public class Client {
@@ -32,14 +32,19 @@ public class Client {
         this.portNumber = portNumber;
     }
 
-    public void init() {
+    public String init() {
         try {
             keyPair = SecurityUtils.GenerateKeyPair();
             socket = new Socket(hostname, portNumber);
             socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
             socketInputStream = new ObjectInputStream(socket.getInputStream());
-            publicKeyBlockId = writePublicKeyBlock(keyPair.getPublic(), new String[0]);
-            System.out.println("File created with id: "+publicKeyBlockId);
+            publicKeyBlockId = writePublicKeyBlock(keyPair.getPublic(), new ArrayList<>());
+            if(publicKeyBlockId.equals(SecurityUtils.Hash(keyPair.getPublic().getEncoded()))){
+                return publicKeyBlockId;
+            }else{
+                return null;
+            }
+
         } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -47,23 +52,22 @@ public class Client {
 
     public void write(int position, int size, byte[] contents) {
         try {
-            String[] ids = getContentBlockReferences(publicKeyBlockId);
+            List<String> ids = getContentBlockReferences(publicKeyBlockId);
 
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (size / Constants.CBLOCKLENGTH);
 
-            if (endIndex >= ids.length) {
-                ids = Utils.concat(ids, new String[endIndex - ids.length + 1]);
+            if (endIndex >= ids.size()) {
+
             }
 
             for (int i = startIndex, pos = 0; i <= endIndex && pos < size; i++, pos += Constants.CBLOCKLENGTH) {
                 int posEnd = pos + Constants.CBLOCKLENGTH;
                 byte[] contentChunk = Arrays.copyOfRange(contents, pos, posEnd);
                 String contentBlockId = writeContentBlock(contentChunk);
-                ids[i] = contentBlockId;
+                ids.add(i, contentBlockId);
+                //TODO replace old blocks
             }
-            //TODO add signature to header block
-
             writePublicKeyBlock(keyPair.getPublic(), ids);
 
         } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException ex) {
@@ -76,13 +80,13 @@ public class Client {
     //Tip use modulus
     public byte[] read(String id, int position, int size) {
         try {
-            String[] contentBlockIds = getContentBlockReferences(id);
+            List<String> contentBlockIds = getContentBlockReferences(id);
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (size / Constants.CBLOCKLENGTH);
-            if (startIndex < contentBlockIds.length) {
+            if (startIndex < contentBlockIds.size()) {
                 byte[] result = new byte[0];
-                for (int i = startIndex; i < contentBlockIds.length && i <= endIndex; ++i) {
-                    String blockHash = contentBlockIds[i];
+                for (int i = startIndex; i < contentBlockIds.size() && i <= endIndex; ++i) {
+                    String blockHash = contentBlockIds.get(i);
                     byte[] bytes = readBlock(blockHash);
                     if (SecurityUtils.verifyHash(bytes, blockHash)) {
                         result = Utils.concat(result, bytes);
@@ -112,31 +116,52 @@ public class Client {
     /*
                             PUBLIC KEY BLOCK STRUCTURE
              ---------------------------------------------------------
-            |   SIGNATURE OF HASHES , CONTENT_HASH_1, CONTENT_HASH_2, etc |
+            |   BLOCK SIGNATURE 128 bytes
+            |   PUBLIC KEY 162 bytes
+            |   BLOCK IDS size is multiple of 64 bytes
+
+
              ---------------------------------------------------------
      */
-    private String writePublicKeyBlock(PublicKey publicKey, String[] ids) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, ClassNotFoundException {
+    private String writePublicKeyBlock(PublicKey publicKey, List<String> ids) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, ClassNotFoundException {
         socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
-        String content = String.join(",", ids);
-        byte[] data = content.getBytes();
-        socketOutputStream.writeObject(data);
+        byte[] data;
+        byte[] publicKeyBytes = publicKey.getEncoded();
+        if(ids.size() == 0){
+            data = publicKeyBytes;
+        }else{
+            data = Utils.concat(publicKeyBytes, String.join("", ids).getBytes());
+        }
+
         byte[] signature = SecurityUtils.Sign(data, keyPair);
-        socketOutputStream.writeObject(signature);
+
+        byte[] pkBlock = Utils.concat(signature, data);
+        socketOutputStream.writeObject(pkBlock);
+
+        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlock, keyPair));
         socketOutputStream.writeObject(publicKey);
-        return (String) socketInputStream.readObject();
+        String id = (String) socketInputStream.readObject();
+        return id;
     }
 
-    private String[] getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    private List<String> getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         byte[] pkBlock = readBlock(publicKeyBlockId);
-        String pkBlockStr = new String(pkBlock);
-        String[] ids = pkBlockStr.split(",");
-        return ids;
-//TODO
-//        String signature = ids[0];
-//        if(SecurityUtils.Verify(pkBlock, signature.getBytes(), publicKeyBlockId)){
-//            return Arrays.copyOfRange(ids, 1, ids.length);
-//        }
-//        return new String [0];
+        byte[] signature = Arrays.copyOfRange(pkBlock, 0, Constants.SIGNATURE_SIZE);
+        int publicKeyEndPos = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
+        byte[] publicKeyBytes = Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, publicKeyEndPos);
+        PublicKey key = SecurityUtils.getKey(publicKeyBytes);
+
+        List<String> idsList = new ArrayList<>();
+        if(SecurityUtils.verifyHash(key.getEncoded(), publicKeyBlockId)
+                && SecurityUtils.Verify(Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, pkBlock.length), signature, key)){
+            byte[] ids = Arrays.copyOfRange(pkBlock, publicKeyEndPos, pkBlock.length);
+
+            for (int i = 0; i < ids.length; i+= Constants.BLOCK_HASH_SIZE) {
+                String blockId = new String(Arrays.copyOfRange(ids, i, i+ Constants.BLOCK_HASH_SIZE));
+                idsList.add(blockId);
+            }
+        }
+        return idsList;
     }
 
 
