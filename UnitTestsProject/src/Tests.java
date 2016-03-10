@@ -1,5 +1,6 @@
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
@@ -34,43 +35,42 @@ public class Tests {
 	@Test
 	public void readBeyondEndOfTheFile()
 	{
-		KeyPair kp = null;
-		
 		assertTrue(Security.CreateKeyStore(USERNAME, PASSWORD));
 		assertTrue(Files.Exists(USERNAME+Constants.KEYSTOREEXTENSION));
-		assertNotNull(kp = Security.GetKeyPair(USERNAME, PASSWORD));
+		assertNotNull(Security.GetKeyPair(USERNAME, PASSWORD));
 		
-		new Thread(new Runnable() {
-			public void run(){
-				ServerMain.main();
-			}
-		}).start();
+		//Init Block server
+//		MultiThread server = new MultiThread();
+//		new Thread(server).start();
+//
+//		try {
+//		    Thread.sleep(5 * 1000);
+//		} catch (InterruptedException e) {
+//		    e.printStackTrace();
+//		}
 		
-		Thread tClientMain = new Thread(new Runnable() {
-			public void run(){
-				Client client = new Client(null, 1234);
-		        client.init();
-				byte[] data = new byte[Constants.CBLOCKLENGTH + 20];
-				Random r = new Random();
-				r.nextBytes(data);
-		        client.write(0, Constants.CBLOCKLENGTH+20,data);
-		        
-		        byte[] finalbytes = 
-		        		client.read(client.GetPublicKeyBlockId(), Constants.CBLOCKLENGTH, 50);
-		        
-		        ByteBuffer buf = ByteBuffer.wrap(data,Constants.CBLOCKLENGTH, 20);
-		        readBeyondEndOfTheFileByteArrayTest
-		        	= Arrays.equals(buf.array(), finalbytes);
-		        
-			}
-		});
-		tClientMain.start();
-		try {
-			tClientMain.wait();
-		} catch (InterruptedException e) {
-		}
+		//Init Client library
+		Client client = new Client("localhost", Constants.PORT);
+        String publicKeyBlockId = client.init();
+		byte[] data = new byte[Constants.CBLOCKLENGTH];
+		Random r = new Random();
+		r.nextBytes(data);
+        client.write(0, Constants.CBLOCKLENGTH,data);
+        
+        byte[] finalbytes = 
+        		client.read(publicKeyBlockId, Constants.CBLOCKLENGTH, 50);
+        
+        ByteBuffer buf = ByteBuffer.wrap(data,Constants.CBLOCKLENGTH, 20);
+        readBeyondEndOfTheFileByteArrayTest
+        	= Arrays.equals(buf.array(), finalbytes);
+
+		Files.DeleteFile(USERNAME+Constants.KEYSTOREEXTENSION);
+		Files.DeleteAllBlockServerFiles();
 		
-		assertTrue(readBeyondEndOfTheFileByteArrayTest);
+		System.out.println("Stopping Server");
+		//server.stop();
+		
+		assertTrue(readBeyondEndOfTheFileByteArrayTest);	
 	}
 
 }

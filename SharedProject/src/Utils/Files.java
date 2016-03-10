@@ -12,7 +12,10 @@ public class Files {
 
 	public static String WriteFile(String path, byte[] data){
 		BufferedOutputStream writer = null;
-		try {			
+		try {	
+			File theDir = new File(path.substring(0, path.lastIndexOf("\\")));
+			if(!theDir.exists())
+				theDir.mkdir();
 			writer = new BufferedOutputStream(new FileOutputStream(path));
 			writer.write(data);
 			writer.close();
@@ -34,12 +37,15 @@ public class Files {
 
 	    // get all the files from a directory
 	    File[] fList = directory.listFiles();
-	    for (File file : fList) {
-	        if (file.isFile()) {
-	            files.add(file);
-	        } else if (file.isDirectory()) {
-	        	ListFiles(file.getAbsolutePath(), files);
-	        }
+	    if(fList!= null)
+	    {
+		    for (File file : fList) {
+		        if (file.isFile()) {
+		            files.add(file);
+		        } else if (file.isDirectory()) {
+		        	ListFiles(file.getAbsolutePath(), files);
+		        }
+		    }
 	    }
 	}
 	
@@ -82,6 +88,7 @@ public class Files {
 		}finally{
 			if(scanner != null)
 				scanner.close();
+			
 		}
 	   
 	}

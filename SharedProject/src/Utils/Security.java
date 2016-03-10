@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -17,8 +18,10 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Formatter;
 
 public class Security 
 {
@@ -49,15 +52,41 @@ public class Security
 	{
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		md.update(publicK.getEncoded());
-		return Base64.getEncoder().encodeToString(md.digest());
+		return ByteToHex(md.digest());
 	}
 	
 	public static String Hash(byte[] data) throws NoSuchAlgorithmException
 	{
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		md.update(data);
-		return Base64.getEncoder().encodeToString(md.digest());
+		return ByteToHex(md.digest());
 	}
+	
+    public static PublicKey GetKeyByBytes(byte[] publicKeyBytes) {
+        try{
+            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(publicKeyBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            return kf.generatePublic(X509publicKey);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    
+    private static String ByteToHex(final byte[] hash)
+    {
+        Formatter formatter = new Formatter();
+        for (byte b : hash)
+        {
+            formatter.format("%02x", b);
+        }
+        String result = formatter.toString();
+        formatter.close();
+        return result;
+    }
 	
 	public static KeyPair GetKeyPair(String username, String password)
 	{
