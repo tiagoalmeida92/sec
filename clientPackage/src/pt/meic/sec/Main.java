@@ -76,6 +76,7 @@ public class Main {
         int position = Integer.parseInt(tokens[2]);
         int size = Integer.parseInt(tokens[3]);
         byte[] contents = client.read(blockId, position, size);
+        out.println(contents.length+" bytes read");
         out.println(new String(contents));
     }
 
