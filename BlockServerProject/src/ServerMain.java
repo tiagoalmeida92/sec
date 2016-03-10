@@ -5,9 +5,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.PublicKey;
 
-public class Main {
+public class ServerMain {
 
-	public static void main(String[] args)
+	public static void main()
 	{	
 			while(true)
 			{

@@ -51,6 +51,25 @@ public class Files {
 		return file.exists();
 	}
 	
+	public static void DeleteFile(String filename)
+	{
+		File currentDirFile = new File("");
+		String currentProjectDir = currentDirFile.getAbsolutePath();
+		File file = new File(currentProjectDir+"\\"+filename);
+		file.delete();
+	}
+	
+	public static void DeleteAllBlockServerFiles()
+	{
+		File currentDirFile = new File("");
+		for (File file : currentDirFile.listFiles()) {
+			String fName = file.getName();
+		    if (fName.endsWith(Constants.CBLOCKEXTENSION) || fName.endsWith(Constants.PKBLOCKEXTENSION)) {
+		        file.delete();
+		    }
+		}
+	}
+	
 	public static boolean FindOnContent(File file, String id)
 	{
 		Scanner scanner = null;
