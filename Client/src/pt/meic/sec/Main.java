@@ -1,5 +1,6 @@
 package pt.meic.sec;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -42,7 +43,12 @@ public class Main {
 
     private static void init() {
         client = new Client(null, 1234);
-        client.init();
+        String clientFileId = client.init();
+        if(clientFileId != null) {
+            out.println("File created with id: " + clientFileId);
+        }else{
+            out.println("Init error");
+        }
     }
 
     private static void executeWrite(String s) {
@@ -56,6 +62,7 @@ public class Main {
         int size = Integer.parseInt(tokens[2]);
         String contents = tokens[3];
         client.write(position, size, contents.getBytes());
+        out.println("Write success");
     }
 
     private static void executeRead(String s) {
