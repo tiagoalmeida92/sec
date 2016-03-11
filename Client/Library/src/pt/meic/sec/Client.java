@@ -83,14 +83,6 @@ public class Client {
                 blockIdx = 0;
             }
             
-            for (int i = startIndex, pos = 0; i <= endIndex && pos < size; i++, pos += Constants.CBLOCKLENGTH) {
-                int posEnd = pos + Constants.CBLOCKLENGTH;
-                byte[] contentChunk = Arrays.copyOfRange(contents, pos, posEnd);
-                String contentBlockId = writeContentBlock(contentChunk);
-
-                ids.add(i, contentBlockId);
-                //TODO replace old blocks
-            }
             writePublicKeyBlock(keyPair.getPublic(), ids);
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException ex) {
