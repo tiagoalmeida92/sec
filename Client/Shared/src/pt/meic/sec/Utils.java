@@ -1,8 +1,4 @@
-package pt.meic.sec;
 
-/**
- * Created by Tiago on 08-03-2016.
- */
 public class Utils {
     public static byte[] concat(byte[] a, byte[] b) {
         int aLen = a.length;
