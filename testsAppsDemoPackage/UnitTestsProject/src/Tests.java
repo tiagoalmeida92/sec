@@ -8,7 +8,6 @@ import java.util.Random;
 import org.junit.Test;
 
 import Utils.Constants;
-import Utils.DependabilityException;
 import Utils.Files;
 import Utils.Security;
 
@@ -90,7 +89,9 @@ public class Tests {
 	        //reading beyong 10 more bytes
 	        byte[] finalbytes = 
 	        		client.read(publicKeyBlockId, Constants.CBLOCKLENGTH, 10);
-	        assertNull(finalbytes);
+	        byte[] buf = new byte[]{0,0,0,0,0,0,0,0,0,0};
+	        
+	        assertTrue(Arrays.equals(buf, finalbytes));
 
 		} catch (DependabilityException e) {
 			//Not important for this test

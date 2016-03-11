@@ -183,7 +183,7 @@ public class Client {
     private List<String> getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, DependabilityException {
         byte[] pkBlock = readBlock(publicKeyBlockId);
         if(pkBlock == null)
-        	throw new DependabilityException("Block not found OR " + Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
+        	throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
         byte[] signature = Arrays.copyOfRange(pkBlock, 0, Constants.SIGNATURE_SIZE);
         int publicKeyEndPos = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
         byte[] publicKeyBytes = Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, publicKeyEndPos);
