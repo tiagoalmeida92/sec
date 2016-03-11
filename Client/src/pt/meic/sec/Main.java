@@ -1,8 +1,7 @@
+package pt.meic.sec;
 
 import java.io.IOException;
 import java.util.Scanner;
-
-import Utils.DependabilityException;
 
 import static java.lang.System.out;
 

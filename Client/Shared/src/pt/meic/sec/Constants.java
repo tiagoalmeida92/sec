@@ -1,3 +1,5 @@
+package pt.meic.sec;
+
 import java.io.File;
 
 public class Constants {

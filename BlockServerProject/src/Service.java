@@ -119,6 +119,7 @@ public class Service {
 			{
 				if(Files.FindOnContent(publicKFile,id)){
 					iterator.remove();
+					break;
 				}
 			}
 		}

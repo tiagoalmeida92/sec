@@ -1,3 +1,4 @@
+package pt.meic.sec;
 
 public class Utils {
     public static byte[] concat(byte[] a, byte[] b) {

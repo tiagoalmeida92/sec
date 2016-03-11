@@ -1,6 +1,3 @@
-/**
- * Created by Tiago on 29-02-2016.
- */
 package pt.meic.sec;
 
 import java.io.IOException;
@@ -24,7 +21,9 @@ public class Client {
     private Socket socket;
     private ObjectInputStream socketInputStream;
     private ObjectOutputStream socketOutputStream;
-    private String publicKeyBlockId;
+    
+    //Public because of dependability testing
+    public String publicKeyBlockId;
 
 
     public Client(String hostname, int portNumber) {
@@ -32,7 +31,13 @@ public class Client {
         this.portNumber = portNumber;
     }
 
-    public String init() {
+    private void connectToServer() throws IOException {
+        socket = new Socket(hostname, portNumber);
+        socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
+        socketInputStream = new ObjectInputStream(socket.getInputStream());
+    }
+    
+    public String init() throws DependabilityException {
         try {
             keyPair = SecurityUtils.GenerateKeyPair();
             connectToServer();
@@ -43,20 +48,13 @@ public class Client {
                 return null;
             }
 
-        } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException e) {
+        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void connectToServer() throws IOException {
-        socket = new Socket(hostname, portNumber);
-        socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        socketInputStream = new ObjectInputStream(socket.getInputStream());
-    }
-
-    public void write(int position, int size, byte[] contents) {
+    public void write(int position, int size, byte[] contents) throws DependabilityException {
         try {
-            connectToServer();
             List<String> ids = getContentBlockReferences(publicKeyBlockId);
 
             int startIndex = position / Constants.CBLOCKLENGTH;
@@ -79,19 +77,22 @@ public class Client {
                     block[blockIdx++] = contents[contentsIdx++];
                 }
                 String contentBlockId = writeContentBlock(block);
+                if(!contentBlockId.equals(SecurityUtils.Hash(block)))
+                	throw new DependabilityException(Constants.TAMPEREDWITHCONTENTBLOCKEXCEPTIONMESSAGE);
                 ids.set(i, contentBlockId);
                 blockIdx = 0;
             }
+            
             writePublicKeyBlock(keyPair.getPublic(), ids);
 
-        } catch (NoSuchAlgorithmException | IOException | SignatureException | InvalidKeyException | ClassNotFoundException ex) {
+        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    public byte[] read(String id, int position, int readSize) {
+
+    public byte[] read(String id, int position, int readSize) throws DependabilityException {
         try {
-            connectToServer();
             List<String> contentBlockIds = getContentBlockReferences(id);
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (readSize / Constants.CBLOCKLENGTH);
@@ -103,7 +104,6 @@ public class Client {
                     if (SecurityUtils.verifyHash(bytes, blockHash)) {
                         result = Utils.concat(result, bytes);
                     }
-
                 }
                 //Check for weird position cases
                 int modulus = position % Constants.CBLOCKLENGTH;
@@ -121,33 +121,36 @@ public class Client {
                 return result;
             }
             return null;
-        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException|SignatureException|InvalidKeyException e) {
+        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
 
     private byte[] readBlock(String id) throws IOException, ClassNotFoundException {
+    	connectToServer();
         socketOutputStream.writeObject(READ_BLOCK);
         socketOutputStream.writeObject(id);
         return (byte[]) socketInputStream.readObject();
     }
 
     private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException {
-        socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
+    	connectToServer();
+    	socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
         socketOutputStream.writeObject(Arrays.copyOf(contents, Constants.CBLOCKLENGTH));
         return (String) socketInputStream.readObject();
     }
 
     /*
                             PUBLIC KEY BLOCK STRUCTURE
-             -----------------------------------------------------------
-            |   BLOCK SIGNATURE 128 bytes                               |
-            |   PUBLIC KEY 162 bytes                                    |
-            |   BLOCK IDS size is multiple of 64 bytes                  |
-             -----------------------------------------------------------
+             ---------------------------------------------------------
+            |   BLOCK SIGNATURE 128 bytes
+            |   PUBLIC KEY 162 bytes
+            |   BLOCK IDS size is multiple of 64 bytes
+             ---------------------------------------------------------
      */
-    private String writePublicKeyBlock(PublicKey publicKey, List<String> ids) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, ClassNotFoundException {
-        socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
+    private String writePublicKeyBlock(PublicKey publicKey, List<String> ids) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, DependabilityException {
+    	connectToServer();
+    	socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
         byte[] data;
         byte[] publicKeyBytes = publicKey.getEncoded();
         if(ids.size() == 0){
@@ -156,34 +159,52 @@ public class Client {
             data = Utils.concat(publicKeyBytes, String.join("", ids).getBytes());
         }
 
-        byte[] signature = SecurityUtils.Sign(data, keyPair);
-
-        byte[] pkBlock = Utils.concat(signature, data);
-        socketOutputStream.writeObject(pkBlock);
-
-        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlock, keyPair));
-        socketOutputStream.writeObject(publicKey);
-        String id = (String) socketInputStream.readObject();
-        return id;
+        byte[] signature;
+		try {
+			signature = SecurityUtils.Sign(data, keyPair);
+	
+	        byte[] pkBlock = Utils.concat(signature, data);
+	        socketOutputStream.writeObject(pkBlock);
+	
+	        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlock, keyPair));
+	        socketOutputStream.writeObject(publicKey);
+	        String id = (String) socketInputStream.readObject();
+	        if(id.indexOf("[Integrity]") != -1)
+	        	throw new DependabilityException(id);
+	        
+	        return id;
+		} catch (InvalidKeyException e) {
+			throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
+		} catch (SignatureException e) {
+			throw new DependabilityException(Constants.TAMPEREDSIGNATUREEXCEPTIONMESSAGE);
+		}
     }
 
-    private List<String> getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+    private List<String> getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, DependabilityException {
         byte[] pkBlock = readBlock(publicKeyBlockId);
+        if(pkBlock == null)
+        	throw new DependabilityException("Block not found OR " + Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
         byte[] signature = Arrays.copyOfRange(pkBlock, 0, Constants.SIGNATURE_SIZE);
         int publicKeyEndPos = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
         byte[] publicKeyBytes = Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, publicKeyEndPos);
         PublicKey key = SecurityUtils.getKey(publicKeyBytes);
 
         List<String> idsList = new ArrayList<>();
-        if(SecurityUtils.verifyHash(key.getEncoded(), publicKeyBlockId)
-                && SecurityUtils.Verify(Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, pkBlock.length), signature, key)){
-            byte[] ids = Arrays.copyOfRange(pkBlock, publicKeyEndPos, pkBlock.length);
+        try {
+			if(SecurityUtils.verifyHash(key.getEncoded(), publicKeyBlockId)
+			        && SecurityUtils.Verify(Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, pkBlock.length), signature, key)){
+			    byte[] ids = Arrays.copyOfRange(pkBlock, publicKeyEndPos, pkBlock.length);
 
-            for (int i = 0; i < ids.length; i+= Constants.BLOCK_HASH_SIZE) {
-                String blockId = new String(Arrays.copyOfRange(ids, i, i+ Constants.BLOCK_HASH_SIZE));
-                idsList.add(blockId);
-            }
-        }
+			    for (int i = 0; i < ids.length; i+= Constants.BLOCK_HASH_SIZE) {
+			        String blockId = new String(Arrays.copyOfRange(ids, i, i+ Constants.BLOCK_HASH_SIZE));
+			        idsList.add(blockId);
+			    }
+			}
+		} catch (InvalidKeyException e) {
+			throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
+		} catch (SignatureException e) {
+			throw new DependabilityException(Constants.TAMPEREDSIGNATUREEXCEPTIONMESSAGE);
+		}
         return idsList;
     }
 

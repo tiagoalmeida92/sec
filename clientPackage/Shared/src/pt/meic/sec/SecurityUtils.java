@@ -50,7 +50,7 @@ public class SecurityUtils
         return byteToHex(md.digest());
     }
 
-    private static String byteToHex(final byte[] hash)
+    public static String byteToHex(final byte[] hash)
     {
         Formatter formatter = new Formatter();
         for (byte b : hash)
@@ -61,6 +61,16 @@ public class SecurityUtils
         formatter.close();
         return result;
     }
+    
+	public static byte[] hexStringToByteArray(String s) {
+	    int len = s.length();
+	    byte[] data = new byte[len / 2];
+	    for (int i = 0; i < len; i += 2) {
+	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+	                             + Character.digit(s.charAt(i+1), 16));
+	    }
+	    return data;
+	}
 
     public static boolean verifyHash(byte[] bytes, String expectedHash) throws NoSuchAlgorithmException {
         String hash = Hash(bytes);

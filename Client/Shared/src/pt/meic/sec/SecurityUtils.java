@@ -1,3 +1,4 @@
+package pt.meic.sec;
 
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;

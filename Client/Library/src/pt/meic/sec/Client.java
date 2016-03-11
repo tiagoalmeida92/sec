@@ -1,11 +1,11 @@
+package pt.meic.sec;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
 import java.util.*;
-
-import Utils.DependabilityException;
 
 
 public class Client {

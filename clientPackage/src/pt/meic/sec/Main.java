@@ -42,8 +42,13 @@ public class Main {
     }
 
     private static void init() {
-        client = new Client(null, 1234);
-        String clientFileId = client.init();
+        client = new Client(null, Constants.PORT);
+        String clientFileId = null;
+		try {
+			clientFileId = client.init();
+		} catch (DependabilityException e) {
+			out.println("Dependability fault or attack: "+e.getMessage());
+		}
         if(clientFileId != null) {
             out.println("File created with id: " + clientFileId);
         }else{
@@ -61,7 +66,11 @@ public class Main {
         int position = Integer.parseInt(tokens[1]);
         int size = Integer.parseInt(tokens[2]);
         String contents = tokens[3];
-        client.write(position, size, contents.getBytes());
+        try {
+			client.write(position, size, contents.getBytes());
+		} catch (DependabilityException e) {
+			out.println("Dependability fault or attack: "+e.getMessage());
+		}
         out.println("Write success");
     }
 
@@ -75,9 +84,14 @@ public class Main {
         String blockId = tokens[1];
         int position = Integer.parseInt(tokens[2]);
         int size = Integer.parseInt(tokens[3]);
-        byte[] contents = client.read(blockId, position, size);
-        out.println(contents.length+" bytes read");
-        out.println(new String(contents));
+        byte[] contents = null;
+		try {
+			contents = client.read(blockId, position, size);
+			out.println(contents.length+" bytes read");
+			out.println(new String(contents));
+		} catch (DependabilityException e) {
+			out.println("Dependability fault or attack: "+e.getMessage());
+		}     
     }
 
     private static void displayCommands() {
