@@ -15,6 +15,7 @@ public class MultiThread implements Runnable{
 	private ServerSocket serverSocket = null;
 	private boolean isStopped = false;
 	private Thread runningThread = null;
+	private Worker worker = null;
 	
 	public void run(){
         synchronized(this){
@@ -34,8 +35,9 @@ public class MultiThread implements Runnable{
                 throw new RuntimeException(
                     "Error accepting client connection", e);
             }
+            worker = new Worker(clientSocket);
             new Thread(
-                    new Worker(clientSocket)
+                    worker
                 ).start();
         }
         System.out.println("Server Stopped.");
@@ -61,4 +63,6 @@ public class MultiThread implements Runnable{
             throw new RuntimeException("Cannot open port " + serverPort, e);
         }
     }
+	
+	
 }

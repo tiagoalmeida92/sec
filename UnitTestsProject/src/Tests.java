@@ -1,4 +1,5 @@
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -7,6 +8,7 @@ import java.util.Random;
 import org.junit.Test;
 
 import Utils.Constants;
+import Utils.DependabilityException;
 import Utils.Files;
 import Utils.Security;
 
@@ -48,6 +50,9 @@ public class Tests {
 	        
 	        assertTrue(byteArrayTest);
 			
+		} catch (DependabilityException e) {
+			//Not important for this test
+			assertTrue(true);
 		}
 		finally{
 			Files.DeleteFile(USERNAME+Constants.KEYSTOREEXTENSION);
@@ -87,6 +92,9 @@ public class Tests {
 	        		client.read(publicKeyBlockId, Constants.CBLOCKLENGTH, 10);
 	        assertNull(finalbytes);
 
+		} catch (DependabilityException e) {
+			//Not important for this test
+			assertTrue(true);
 		}
 		finally{
 			Files.DeleteFile(USERNAME+Constants.KEYSTOREEXTENSION);
@@ -131,17 +139,13 @@ public class Tests {
 			Random auxR = new Random();
 			auxR.nextBytes(testData);
 			publicKeyBlockId=Security.ByteToHex(testData).substring(0, Constants.PUBLIC_KEY_SIZE);
-	        try{
-		        client.read(publicKeyBlockId, 0,  Constants.CBLOCKLENGTH);
-	        }catch (Exception e){
-	        	//Error when receiving the data from a call
-	        	//to Get function of the block server
-	        	//Because it returns null!
-	        	//Probabilly needs some fault tolerance or exception catching
-	        	//More low level (in the Client.java)
-	        	assertTrue(true);
-	        }
+		    client.read(publicKeyBlockId, 0,  Constants.CBLOCKLENGTH);
         
+		} catch (DependabilityException e1) {
+			//Important for this test
+			assertTrue(e1.getMessage().equals(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE) ||
+					e1.getMessage().equals(Constants.TAMPEREDSIGNATUREEXCEPTIONMESSAGE) ||
+					e1.getMessage().equals(Constants.TAMPEREDWITHCONTENTBLOCKEXCEPTIONMESSAGE));
 		}
 		finally{
 			Files.DeleteFile(USERNAME+Constants.KEYSTOREEXTENSION);

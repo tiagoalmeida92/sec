@@ -20,23 +20,23 @@ public class Service {
 	{
 		try {
 			if(!Security.Verify(data, signature, publicK))
-				return "[1] Integrity failure or bad public key.";
+				return "[Integrity] Integrity failure or bad public key.";
 		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-			return "[1] Invalid key or signature exception.";
+			return "[Integrity] Invalid key or signature exception.";
 		}
 		
 		String fileName,fileStatus;
 		try {
 			fileName = Security.GetPublicKeyHash(publicK);
 		} catch (NoSuchAlgorithmException e1) {
-			return "[1] Invalid digest algorithm.";
+			return "[Integrity] Invalid digest algorithm.";
 		}
 		
 		if((fileStatus = Files.WriteFile(Constants.PKBLOCKPATH+fileName+Constants.PKBLOCKEXTENSION,data)).equals("Success"))
 		{
 			return fileName;
 		}
-		return "[2] "+fileStatus;
+		return "[Fault] "+fileStatus;
 	}
 	
 	public static String putH(byte[] data)
