@@ -34,6 +34,7 @@ public class Worker implements Runnable {
 					publicK = (PublicKey) inputStream.readObject();
 					id = Service.putK(data,signature,publicK);
 					outputStream.writeObject(id);
+					Service.filesGarbageCollection();
 					break;
 					
 				case "put_h":
@@ -50,7 +51,7 @@ public class Worker implements Runnable {
 				default: 
 					break;
 			}
-			Service.filesGarbageCollection();
+			
 		} catch (IOException | ClassNotFoundException e) {
 			
 		}

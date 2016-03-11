@@ -76,7 +76,7 @@ public class Security
         return null;
     }
     
-    private static String ByteToHex(final byte[] hash)
+    public static String ByteToHex(final byte[] hash)
     {
         Formatter formatter = new Formatter();
         for (byte b : hash)
@@ -87,25 +87,40 @@ public class Security
         formatter.close();
         return result;
     }
+    
+	public static byte[] HexStringToByteArray(String s) {
+	    int len = s.length();
+	    byte[] data = new byte[len / 2];
+	    for (int i = 0; i < len; i += 2) {
+	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+	                             + Character.digit(s.charAt(i+1), 16));
+	    }
+	    return data;
+	}
 	
 	public static KeyPair GetKeyPair(String username, String password)
 	{
 		KeyStore ks;
 		try {
 			ks = KeyStore.getInstance(KeyStore.getDefaultType());
-			FileInputStream fis = new FileInputStream(username+ Constants.KEYSTOREEXTENSION);
-		    ks.load(fis, password.toCharArray());
-		    fis.close();
-
-		    //Get private key
-		    ProtectionParameter paramPassword = 
-		    		new KeyStore.PasswordProtection(password.toCharArray());
-		    KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
-		            ks.getEntry("certSelfSignedAlias", paramPassword);
-	        PrivateKey privateKey = pkEntry.getPrivateKey();
-	        //Get public key
-	        PublicKey publicKey = ks.getCertificate("certSelfSignedAlias").getPublicKey();
-	        return new KeyPair(publicKey, privateKey);
+			String path = Files.GetPath(username+ Constants.KEYSTOREEXTENSION);
+			if(path != null){
+				FileInputStream fis = new FileInputStream(path);
+			    ks.load(fis, password.toCharArray());
+			    fis.close();
+	
+			    //Get private key
+			    ProtectionParameter paramPassword = 
+			    		new KeyStore.PasswordProtection(password.toCharArray());
+			    KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
+			            ks.getEntry("certSelfSignedAlias", paramPassword);
+		        PrivateKey privateKey = pkEntry.getPrivateKey();
+		        //Get public key
+		        PublicKey publicKey = ks.getCertificate("certSelfSignedAlias").getPublicKey();
+		        return new KeyPair(publicKey, privateKey);
+			}
+			else
+				return null;
 		} catch (KeyStoreException 
 				| NoSuchAlgorithmException 
 				| CertificateException 
@@ -145,10 +160,24 @@ public class Security
 	        stdOutput.write("yes");
 	        stdOutput.newLine();        
 	        stdOutput.newLine();
-	        stdOutput.close();
+	        stdOutput.close(); 
 	        return Files.Exists(username+Constants.KEYSTOREEXTENSION);
 	    } catch (IOException e) {
 	    	return false;
 		}
 	}
+	
+    public static PublicKey getKey(byte[] publicKeyBytes) {
+        try{
+            X509EncodedKeySpec X509publicKey = new X509EncodedKeySpec(publicKeyBytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+
+            return kf.generatePublic(X509publicKey);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

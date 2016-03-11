@@ -1,12 +1,13 @@
 package Utils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Files {
 
@@ -49,12 +50,38 @@ public class Files {
 	    }
 	}
 	
-	public static boolean Exists(String filename)
+	public static boolean Exists(String fileNameWithExtension)
+	{
+		return GetPath(fileNameWithExtension) != null;
+	}
+	
+	public static String GetPath(String fileNameWithExtension)
 	{
 		File currentDirFile = new File("");
-		String currentProjectDir = currentDirFile.getAbsolutePath();
-		File file = new File(currentProjectDir+"\\"+filename);
-		return file.exists();
+		String absPath = currentDirFile.getAbsolutePath();
+		String currentProjectDir = absPath.substring(0,absPath.lastIndexOf(File.separator));
+		ArrayList<File> files = new ArrayList<File>();
+		ListFilesWithFileName(currentProjectDir, fileNameWithExtension, files);
+		if(files.size()!= 0)
+			return files.get(0).getAbsolutePath();
+		return null;
+	}
+	
+	private static void ListFilesWithFileName(String directoryName, String fileNameWithExtension, ArrayList<File> files) {
+	    File directory = new File(directoryName);
+
+	    // get all the files from a directory
+	    File[] fList = directory.listFiles();
+	    if(fList!= null)
+	    {
+		    for (File file : fList) {
+		        if (file.isFile() && (file.getName()).equals(fileNameWithExtension)) {
+		            files.add(file);
+		        } else if (file.isDirectory()) {
+		        	ListFilesWithFileName(file.getAbsolutePath(), fileNameWithExtension,files);
+		        }
+		    }
+	    }
 	}
 	
 	public static void DeleteFile(String filename)
@@ -65,31 +92,44 @@ public class Files {
 		file.delete();
 	}
 	
+	private static void RecursiveDelete(final File dir) {
+		final File[] files = dir.listFiles();
+		if (files != null) {
+			for (final File file : files) {
+				String fName = file.getName();
+				if (file.isDirectory()) {
+					RecursiveDelete(file);
+				} else if (fName.endsWith(Constants.CBLOCKEXTENSION) 
+						|| fName.endsWith(Constants.PKBLOCKEXTENSION)) {
+					file.delete();
+				}
+			}
+		}
+	}
+	
 	public static void DeleteAllBlockServerFiles()
 	{
 		File currentDirFile = new File("");
-		for (File file : currentDirFile.listFiles()) {
-			String fName = file.getName();
-		    if (fName.endsWith(Constants.CBLOCKEXTENSION) || fName.endsWith(Constants.PKBLOCKEXTENSION)) {
-		        file.delete();
-		    }
-		}
+		String absPath = currentDirFile.getAbsolutePath();
+		String currentProjectDir = absPath.substring(0,absPath.lastIndexOf(File.separator));
+		currentDirFile = new File(currentProjectDir);
+		RecursiveDelete(currentDirFile);
 	}
 	
 	public static boolean FindOnContent(File file, String id)
 	{
-		Scanner scanner = null;
+		byte[] myByteArray = new byte[(int) file.length()];
+		
+		BufferedInputStream reader = null;
 		try {
-			scanner = new Scanner(file).useDelimiter("\\Z");
-			String contents = scanner.next();
-			return contents.indexOf(id) != -1;
-		} catch (FileNotFoundException e) {
+			reader = new BufferedInputStream(new FileInputStream(file));
+			reader.read(myByteArray, 0, myByteArray.length);
+			reader.close();
+			String source = new String(myByteArray);			
+			return source.indexOf(id) != -1;
+		} catch (IOException e) {
 			return false;
-		}finally{
-			if(scanner != null)
-				scanner.close();
-			
 		}
-	   
 	}
+	
 }
