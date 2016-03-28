@@ -3,19 +3,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import Utils.Constants;
 import Utils.Files;
 import Utils.Security;
+import Utils.Utils;
 
 public class Service {
 
+	/*
+	 * S1
+	 */
 	public static String putK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		try {
@@ -39,6 +46,9 @@ public class Service {
 		return "[Fault] "+fileStatus;
 	}
 	
+	/*
+	 * S1
+	 */
 	public static String putH(byte[] data)
 	{
 		String fileStatus;
@@ -58,6 +68,9 @@ public class Service {
 		return "[3] data received its bigger than " + Constants.CBLOCKLENGTH + "bytes";
 	}
 	
+	/*
+	 * S1
+	 */
 	public static byte[] get(String id)
 	{
 		BufferedInputStream reader = null;
@@ -104,6 +117,9 @@ public class Service {
 		}
 	}
 
+	/*
+	 * S1
+	 */
 	public static void filesGarbageCollection() 
 	{
 		ArrayList<File> contentBlock = new ArrayList<File>();
@@ -126,6 +142,36 @@ public class Service {
 		for(File f : contentBlock)
 		{
 			f.delete();
+		}
+	}
+	
+	/*
+	 * S2
+	 */
+	public static boolean storePubKey(PublicKey publicKey)
+	{
+		Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+		try {
+			List<String> certs = java.nio.file.Files.readAllLines(path);
+			certs.add(Security.ByteToHex(publicKey.getEncoded()));
+			certs.set(0, Security.Hash(Utils.toByteArray(certs)));
+			java.nio.file.Files.write(path, certs);
+			return true;
+		} catch (IOException | NoSuchAlgorithmException e) {
+			return false;
+		}
+	}
+	
+	/*
+	 * S2
+	 */
+	public static List<String> readPubKeys()
+	{
+		Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+		try {
+			return java.nio.file.Files.readAllLines(path);		
+		} catch (IOException e) {
+			return null;
 		}
 	}
 }

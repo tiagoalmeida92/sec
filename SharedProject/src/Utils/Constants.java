@@ -11,6 +11,7 @@ public class Constants {
 	public static final String CBLOCKEXTENSION = ".cblock";
 	public static final String PKBLOCKPATH = new File("").getAbsolutePath()+"\\pkblocks\\";
 	public static final String CBLOCKPATH = new File("").getAbsolutePath()+"\\cblocks\\";
+	public static final String CERTIFICATESFILEPATH = new File("").getAbsolutePath()+"\\certificates.clients";
 	
 	//Content blocks length
 	public static final int CBLOCKLENGTH = 6000; //10KB
