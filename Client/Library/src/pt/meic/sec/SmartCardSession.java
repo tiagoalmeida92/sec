@@ -4,7 +4,6 @@ import pteidlib.*;
 import sun.security.pkcs11.wrapper.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -56,7 +55,7 @@ public class SmartCardSession {
         return cert;
     }
 
-    public void sign(byte[] data) throws PKCS11Exception {
+    public byte[] sign(byte[] data) throws PKCS11Exception {
 
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[1];
         attributes[0] = new CK_ATTRIBUTE();
@@ -75,6 +74,8 @@ public class SmartCardSession {
         mechanism.mechanism = PKCS11Constants.CKM_SHA256_RSA_PKCS;
         mechanism.pParameter = null;
         pkcs11.C_SignInit(p11_session, mechanism, signatureKey);
+        byte[] signature = pkcs11.C_Sign(p11_session, data);
+        return signature;
     }
 
     public static void showInfo() {

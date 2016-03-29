@@ -1,11 +1,5 @@
 package pt.meic.sec;
 
-import pteidlib.PteidException;
-import sun.security.pkcs11.wrapper.PKCS11Exception;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.security.cert.X509Certificate;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -13,17 +7,10 @@ import static java.lang.System.out;
 public class Main {
 
     private static Client client;
-    private static SmartCardSession smartCardSession;
 
     public static void main(String[] args) {
         displayCommands();
-        client = new Client(null, 1234);
-        try {
-            smartCardSession = new SmartCardSession();
-        } catch (PteidException | ClassNotFoundException | InvocationTargetException | NoSuchMethodException | IllegalAccessException | PKCS11Exception e) {
-            e.printStackTrace();
-            return;
-        }
+        client = new Client(null, 64535);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             out.print(">");
@@ -66,8 +53,7 @@ public class Main {
     private static void init() {
         String clientFileId = null;
 		try {
-            X509Certificate certificate = smartCardSession.getCertificate();
-            clientFileId = client.init(certificate);
+            clientFileId = client.init();
 		} catch (DependabilityException e) {
 			out.println("Dependability fault or attack: "+e.getMessage());
 		}
