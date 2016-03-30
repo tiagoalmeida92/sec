@@ -1,8 +1,13 @@
 package Utils;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -12,17 +17,43 @@ import java.security.KeyStore.ProtectionParameter;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
+import java.security.cert.CRLException;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CRL;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Formatter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
+/*
+ * Reference to the certificates methods 
+ * http://www.nakov.com/blog/2009/12/01/x509-certificate-validation-in-java-build-and-verify-chain-and-verify-clr-with-bouncy-castle/
+ * 
+ */
 public class Security 
 {
 	
@@ -179,5 +210,172 @@ public class Security
         }
 
         return null;
+    }
+
+    public static boolean VerifyFreshness(String timestamp)
+    {
+    	DateTimeZone zone = DateTimeZone.forID("Europe/Lisbon");
+        DateTime currentDateTime = new DateTime(zone);
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+        Date dateToVerify = null;
+        try {
+            dateToVerify = format.parse(timestamp);
+        } catch (ParseException e) {
+            return false;
+        }
+        long diffInMillis = currentDateTime.getMillis() - dateToVerify.getTime();
+        if(diffInMillis > Constants.FRESHNESSTIMESTAMP)
+        {
+            return false;
+        }
+        return true;
+    }
+    
+    private static Set<X509Certificate> GetCACertificates(String... paths) throws CertificateException, FileNotFoundException
+    {
+    	CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    	Set<X509Certificate> certificates = new HashSet<X509Certificate>();
+    	for(String path : paths)
+    	{
+    		FileInputStream in = new FileInputStream(path);
+    		certificates.add((X509Certificate) cf.generateCertificate(in));
+    	}
+        return certificates;
+    }
+    
+    /*
+     * S2
+     */
+	public static boolean VerifyCertificate(X509Certificate cert) 
+			throws CertificateException, NoSuchAlgorithmException, 
+			NoSuchProviderException, FileNotFoundException {
+		
+		Set<X509Certificate> additionalCerts = 
+				GetCACertificates(Constants.CCCA1, Constants.CCCA2, Constants.CCCA3);
+		
+		// Check for self-signed certificate
+        if (IsSelfSigned(cert)) 
+        	return false;
+        
+        // Prepare a set of trusted root CA certificates
+        // and a set of intermediate certificates
+        Set<X509Certificate> trustedRootCerts = new HashSet<X509Certificate>();
+        Set<X509Certificate> intermediateCerts = new HashSet<X509Certificate>();
+        for (X509Certificate additionalCert : additionalCerts) {
+            if (IsSelfSigned(additionalCert)) {
+                trustedRootCerts.add(additionalCert);
+            } else {
+                intermediateCerts.add(additionalCert);
+            }
+        }
+        
+        try{
+        	
+        	// Attempt to build the certification chain and verify it
+        	VerifyCertificate(cert, trustedRootCerts, intermediateCerts);
+        	
+            // Check whether the certificate is revoked by the CRL
+            // given in its CRL distribution point extension
+            return VerifyCertificateCRLs(cert,Constants.CCCRL1, 
+            		Constants.CCCRL2, Constants.CCCRL3);
+            
+        }catch(GeneralSecurityException | IOException ex){
+        	return false;
+        }
+	}
+	
+	private static boolean VerifyCertificateCRLs(X509Certificate cert, String... crlsURLs) 
+			throws MalformedURLException, CertificateException, CRLException, IOException {
+        for (String crlURL : crlsURLs) {
+            X509CRL crl = DownloadCRLFromWeb(crlURL);
+            if (crl.isRevoked(cert)) {
+                return false;
+            }
+        }
+        return true;
+	}
+
+	/**
+     * Downloads a CRL from given HTTP/HTTPS/FTP URL, e.g.
+     * http://crl.infonotary.com/crl/identity-ca.crl
+     */
+    private static X509CRL DownloadCRLFromWeb(String crlURL)
+            throws MalformedURLException, IOException, CertificateException,
+            CRLException {
+        URL url = new URL(crlURL);
+        InputStream crlStream = url.openStream();
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509CRL crl = (X509CRL) cf.generateCRL(crlStream);
+            return crl;
+        } finally {
+            crlStream.close();
+        }
+    }
+	
+	/**
+     * Checks whether given X.509 certificate is self-signed.
+     */
+    public static boolean IsSelfSigned(X509Certificate cert) 
+    		throws CertificateException, NoSuchAlgorithmException, 
+    		NoSuchProviderException {
+        try {
+            // Try to verify certificate signature with its own public key
+            PublicKey key = cert.getPublicKey();
+            cert.verify(key);
+            return true;
+        } catch (SignatureException sigEx) {
+            // Invalid signature --> not self-signed
+            return false;
+        } catch (InvalidKeyException keyEx) {
+            // Invalid key --> not self-signed
+            return false;
+        }
+    }
+    
+    /**
+     * Attempts to build a certification chain for given certificate and to verify
+     * it. Relies on a set of root CA certificates (trust anchors) and a set of
+     * intermediate certificates (to be used as part of the chain).
+     * @param cert - certificate for validation
+     * @param trustedRootCerts - set of trusted root CA certificates
+     * @param intermediateCerts - set of intermediate certificates
+     * @return the certification chain (if verification is successful)
+     * @throws GeneralSecurityException - if the verification is not successful
+     *      (e.g. certification path cannot be built or some certificate in the
+     *      chain is expired)
+     */
+    private static PKIXCertPathBuilderResult VerifyCertificate(X509Certificate cert, Set<X509Certificate> trustedRootCerts,
+            Set<X509Certificate> intermediateCerts) throws GeneralSecurityException {
+         
+        // Create the selector that specifies the starting certificate
+        X509CertSelector selector = new X509CertSelector(); 
+        selector.setCertificate(cert);
+         
+        // Create the trust anchors (set of root CA certificates)
+        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
+        for (X509Certificate trustedRootCert : trustedRootCerts) {
+            trustAnchors.add(new TrustAnchor(trustedRootCert, null));
+        }
+         
+        // Configure the PKIX certificate builder algorithm parameters
+        PKIXBuilderParameters pkixParams = 
+            new PKIXBuilderParameters(trustAnchors, selector);
+         
+        // Disable CRL checks (this is done manually as additional step)
+        pkixParams.setRevocationEnabled(false);
+     
+        // Specify a list of intermediate certificates
+        CertStore intermediateCertStore = CertStore.getInstance("Collection",
+            new CollectionCertStoreParameters(intermediateCerts), "BC");
+        pkixParams.addCertStore(intermediateCertStore);
+     
+        // Build and verify the certification chain
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+        PKIXCertPathBuilderResult result = 
+            (PKIXCertPathBuilderResult) builder.build(pkixParams);
+        return result;
     }
 }
