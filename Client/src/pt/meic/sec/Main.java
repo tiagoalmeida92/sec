@@ -1,6 +1,11 @@
 package pt.meic.sec;
 
+import pteidlib.PteidException;
+import sun.security.pkcs11.wrapper.PKCS11Exception;
+
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.security.cert.X509Certificate;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -8,11 +13,20 @@ import static java.lang.System.out;
 public class Main {
 
     private static Client client;
+    private static SmartCardSession smartCardSession;
 
     public static void main(String[] args) {
         displayCommands();
+        client = new Client(null, 1234);
+        try {
+            smartCardSession = new SmartCardSession();
+        } catch (PteidException | ClassNotFoundException | InvocationTargetException | NoSuchMethodException | IllegalAccessException | PKCS11Exception e) {
+            e.printStackTrace();
+            return;
+        }
         Scanner scanner = new Scanner(System.in);
         while (true) {
+            out.print(">");
             String s = scanner.nextLine();
             handleCommand(s);
         }
@@ -25,6 +39,9 @@ public class Main {
         }
         String command = s.substring(0, index);
         switch (command){
+            case "fs_list":
+                listUsers();
+                break;
             case "fs_init":
                 init();
                 break;
@@ -41,11 +58,16 @@ public class Main {
         }
     }
 
+    private static void listUsers() {
+        out.println("manel");
+        out.println("joaquim");
+    }
+
     private static void init() {
-        client = new Client(null, 1234);
         String clientFileId = null;
 		try {
-			clientFileId = client.init();
+            X509Certificate certificate = smartCardSession.getCertificate();
+            clientFileId = client.init(certificate);
 		} catch (DependabilityException e) {
 			out.println("Dependability fault or attack: "+e.getMessage());
 		}
@@ -96,6 +118,7 @@ public class Main {
 
     private static void displayCommands() {
         out.println("COMMANDS:");
+        out.println("fs_list\nList fs users\n");
         out.println("fs_init\nCreate new filesystem user\n");
         out.println("fs_write <pos> <size> <contents>\nWrite to file\n");
         out.println("fs_read <id> <pos> <size> \nRead file\n");

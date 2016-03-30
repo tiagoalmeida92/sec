@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.*;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
 
@@ -17,7 +18,6 @@ public class Client {
     private final String hostname;
     private final int portNumber;
 
-    private KeyPair keyPair;
     private Socket socket;
     private ObjectInputStream socketInputStream;
     private ObjectOutputStream socketOutputStream;
@@ -37,12 +37,11 @@ public class Client {
         socketInputStream = new ObjectInputStream(socket.getInputStream());
     }
     
-    public String init() throws DependabilityException {
+    public String init(X509Certificate certificate) throws DependabilityException {
         try {
-            keyPair = SecurityUtils.GenerateKeyPair();
             connectToServer();
-            publicKeyBlockId = writePublicKeyBlock(keyPair.getPublic(), new ArrayList<>());
-            if(publicKeyBlockId.equals(SecurityUtils.Hash(keyPair.getPublic().getEncoded()))){
+            publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
+            if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
                 return publicKeyBlockId;
             }else{
                 return null;
@@ -53,7 +52,7 @@ public class Client {
         }
     }
 
-    public void write(int position, int size, byte[] contents) throws DependabilityException {
+    public void write(PublicKey publicKey, int position, int size, byte[] contents) throws DependabilityException {
         try {
             List<String> ids = getContentBlockReferences(publicKeyBlockId);
 
@@ -83,7 +82,7 @@ public class Client {
                 blockIdx = 0;
             }
             
-            writePublicKeyBlock(keyPair.getPublic(), ids);
+            writePublicKeyBlock(publicKey, ids);
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException ex) {
             throw new RuntimeException(ex);
