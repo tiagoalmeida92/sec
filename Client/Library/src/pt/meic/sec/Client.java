@@ -1,8 +1,12 @@
 package pt.meic.sec;
 
+import pteidlib.PteidException;
+import sun.security.pkcs11.wrapper.PKCS11Exception;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -24,6 +28,8 @@ public class Client {
     
     //Public because of dependability testing
     public String publicKeyBlockId;
+    private SmartCardSession smartCardSession;
+    private X509Certificate certificate;
 
 
     public Client(String hostname, int portNumber) {
@@ -37,8 +43,10 @@ public class Client {
         socketInputStream = new ObjectInputStream(socket.getInputStream());
     }
     
-    public String init(X509Certificate certificate) throws DependabilityException {
+    public String init() throws DependabilityException {
         try {
+            smartCardSession = new SmartCardSession();
+            certificate = smartCardSession.getCertificate();
             connectToServer();
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
             if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
@@ -47,12 +55,12 @@ public class Client {
                 return null;
             }
 
-        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException e) {
+        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | InvocationTargetException | PKCS11Exception | IllegalAccessException | NoSuchMethodException | PteidException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void write(PublicKey publicKey, int position, int size, byte[] contents) throws DependabilityException {
+    public void write(int position, int size, byte[] contents) throws DependabilityException {
         try {
             List<String> ids = getContentBlockReferences(publicKeyBlockId);
 
@@ -82,7 +90,7 @@ public class Client {
                 blockIdx = 0;
             }
             
-            writePublicKeyBlock(publicKey, ids);
+            writePublicKeyBlock(certificate.getPublicKey(), ids);
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException ex) {
             throw new RuntimeException(ex);
@@ -160,29 +168,28 @@ public class Client {
 
         byte[] signature;
 		try {
-			signature = SecurityUtils.Sign(data, keyPair);
+			signature = smartCardSession.sign(data);
 	
 	        byte[] pkBlock = Utils.concat(signature, data);
 	        socketOutputStream.writeObject(pkBlock);
 	
-	        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlock, keyPair));
+	        socketOutputStream.writeObject(smartCardSession.sign(pkBlock));
 	        socketOutputStream.writeObject(publicKey);
 	        String id = (String) socketInputStream.readObject();
 	        if(id.indexOf("[Integrity]") != -1)
 	        	throw new DependabilityException(id);
 	        
 	        return id;
-		} catch (InvalidKeyException e) {
-			throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
-		} catch (SignatureException e) {
-			throw new DependabilityException(Constants.TAMPEREDSIGNATUREEXCEPTIONMESSAGE);
-		}
+		} catch (PKCS11Exception e) {
+            throw new DependabilityException();
+        }
     }
 
     private List<String> getContentBlockReferences(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, DependabilityException {
         byte[] pkBlock = readBlock(publicKeyBlockId);
-        if(pkBlock != null)
-        	throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
+        if(pkBlock == null) {
+            throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
+        }
         byte[] signature = Arrays.copyOfRange(pkBlock, 0, Constants.SIGNATURE_SIZE);
         int publicKeyEndPos = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
         byte[] publicKeyBytes = Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, publicKeyEndPos);
