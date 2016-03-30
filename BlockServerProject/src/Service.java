@@ -3,13 +3,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,10 +32,15 @@ public class Service {
 	public static String putK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		try {
+			final int fromIndex = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
+			final String srcTimestamp = new String(
+					Arrays.copyOfRange(data, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE),"UTF-8");
+			if(!Security.VerifyFreshness(srcTimestamp))
+				return "[Integrity] Old request. Probably a replay attack.";
 			if(!Security.Verify(data, signature, publicK))
 				return "[Integrity] Integrity failure or bad public key.";
-		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-			return "[Integrity] Invalid key or signature exception.";
+		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException | UnsupportedEncodingException e) {
+			return "[Integrity] Invalid key, encoding or signature exception.";
 		}
 		
 		String fileName,fileStatus;
@@ -148,18 +159,22 @@ public class Service {
 	/*
 	 * S2
 	 */
-	public static boolean storePubKey(PublicKey publicKey)
+	public static boolean storePubKey(X509Certificate cert)
 	{
-		Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
 		try {
-			List<String> certs = java.nio.file.Files.readAllLines(path);
-			certs.add(Security.ByteToHex(publicKey.getEncoded()));
-			certs.set(0, Security.Hash(Utils.toByteArray(certs)));
-			java.nio.file.Files.write(path, certs);
-			return true;
-		} catch (IOException | NoSuchAlgorithmException e) {
+			if(Security.VerifyCertificate(cert))
+			{
+				Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+				List<String> certs = java.nio.file.Files.readAllLines(path);
+				certs.add(Security.ByteToHex(cert.getEncoded()));
+				certs.set(0, Security.Hash(Utils.toByteArray(certs)));
+				java.nio.file.Files.write(path, certs);
+				return true;
+			}
+		} catch (CertificateException | NoSuchAlgorithmException | NoSuchProviderException | IOException e) {
 			return false;
 		}
+		return false;
 	}
 	
 	/*

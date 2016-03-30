@@ -16,7 +16,8 @@ public class TestsS2 {
 	{
 		try {
 			boolean success = false;
-			assertTrue(success=Service.storePubKey(Security.GenerateKeyPair().getPublic()));
+			//Create a certificate from the CC to test
+			//assertTrue(success=Service.storePubKey(Security.GenerateKeyPair().getPublic()));
 			if(success)
 			{
 				List<String> hexCerts = Service.readPubKeys();
@@ -30,7 +31,5 @@ public class TestsS2 {
 			Files.DeleteFile(Constants.CERTIFICATESFILEPATH);
 		}
 	}
-	
-	
 	
 }
