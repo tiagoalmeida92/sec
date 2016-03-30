@@ -24,7 +24,6 @@ public class SmartCardSession {
 
         pteid.Init(""); // Initializes the eID Lib
         pteid.SetSODChecking(false); // Don't check the integrity of the ID, address and photo (!)
-        showInfo();
         String osName = System.getProperty("os.name");
         String javaVersion = System.getProperty("java.version");
         String libName = "libbeidpkcs11.so";
@@ -42,7 +41,6 @@ public class SmartCardSession {
         }
         p11_session = pkcs11.C_OpenSession(0, PKCS11Constants.CKF_SERIAL_SESSION, null, null);
         pkcs11.C_Login(p11_session, 1, null);
-        CK_SESSION_INFO info = pkcs11.C_GetSessionInfo(p11_session);
     }
 
     public X509Certificate getCertificate(){
@@ -64,9 +62,6 @@ public class SmartCardSession {
 
         pkcs11.C_FindObjectsInit(p11_session, attributes);
         long[] keyHandles = pkcs11.C_FindObjects(p11_session, 5);
-
-        // points to auth_key
-        System.out.println("            //points to auth_key. No. of keys:" + keyHandles.length);
 
         long signatureKey = keyHandles[0];        //test with other keys to see what you get
         pkcs11.C_FindObjectsFinal(p11_session);
@@ -124,16 +119,7 @@ public class SmartCardSession {
         byte[] certificate_bytes = null;
         try {
             PTEID_Certif[] certs = pteid.GetCertificates();
-            System.out.println("Number of certs found: " + certs.length);
-            int i = 0;
-            for (PTEID_Certif cert : certs) {
-                System.out.println("-------------------------------\nCertificate #" + (i++));
-                System.out.println(cert.certifLabel);
-            }
-
             certificate_bytes = certs[n].certif; //gets the byte[] with the n-th certif
-
-            //pteid.Exit(pteid.PTEID_EXIT_LEAVE_CARD); // OBRIGATORIO Termina a eID Lib
         } catch (PteidException e) {
             e.printStackTrace();
         }

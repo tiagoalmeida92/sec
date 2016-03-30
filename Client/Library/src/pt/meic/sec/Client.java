@@ -18,6 +18,8 @@ public class Client {
     private static final String PUT_PUBLIC_KEY_BLOCK = "put_k";
     private static final String PUT_FILE_CONTENT_BLOCK = "put_h";
     private static final String READ_BLOCK = "get";
+    private static final String READ_PUBLIC_KEYS = "readPubKeys";
+    private static final String STORE_PUBLIC_KEY = "storePubKey";
 
     private final String hostname;
     private final int portNumber;
@@ -47,9 +49,10 @@ public class Client {
         try {
             smartCardSession = new SmartCardSession();
             certificate = smartCardSession.getCertificate();
-            connectToServer();
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
-            if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
+
+            if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))
+                    && registerCertificate(certificate)){
                 return publicKeyBlockId;
             }else{
                 return null;
@@ -57,6 +60,19 @@ public class Client {
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | InvocationTargetException | PKCS11Exception | IllegalAccessException | NoSuchMethodException | PteidException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private boolean registerCertificate(X509Certificate certificate) {
+        try {
+            connectToServer();
+            socketOutputStream.writeObject(STORE_PUBLIC_KEY);
+            socketOutputStream.writeObject(certificate);
+            boolean result = socketInputStream.readBoolean();
+            return result;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
@@ -148,22 +164,23 @@ public class Client {
     }
 
     /*
-                            PUBLIC KEY BLOCK STRUCTURE
-             ---------------------------------------------------------
-            |   BLOCK SIGNATURE 128 bytes
-            |   PUBLIC KEY 162 bytes
-            |   BLOCK IDS size is multiple of 64 bytes
-             ---------------------------------------------------------
+                    PUBLIC KEY BLOCK STRUCTURE
+             -----------------------------------------------
+            |   BLOCK SIGNATURE 128 bytes                    |
+            |   PUBLIC KEY 162 bytes                         |
+            |   TIMESTAMP  23 bytes                          |
+            |   BLOCK IDS size is multiple of 64 bytes       |
+             -----------------------------------------------
      */
     private String writePublicKeyBlock(PublicKey publicKey, List<String> ids) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, DependabilityException {
     	connectToServer();
     	socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
         byte[] data;
         byte[] publicKeyBytes = publicKey.getEncoded();
-        if(ids.size() == 0){
-            data = publicKeyBytes;
-        }else{
-            data = Utils.concat(publicKeyBytes, String.join("", ids).getBytes());
+        byte[] timestamp = Utils.getTimestamp().getBytes("UTF8");
+        data = Utils.concat(publicKeyBytes, timestamp);
+        if (!ids.isEmpty()) {
+            data = Utils.concat(data, String.join("", ids).getBytes());
         }
 
         byte[] signature;
@@ -215,4 +232,15 @@ public class Client {
     }
 
 
+    public String list() {
+        try {
+            connectToServer();
+            socketOutputStream.writeObject(READ_PUBLIC_KEYS);
+            String result = (String) socketInputStream.readObject();
+            return result;
+        } catch (IOException | ClassNotFoundException e) {
+            return null;
+        }
+
+    }
 }

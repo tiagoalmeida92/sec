@@ -35,7 +35,6 @@ public class Main {
             case "fs_write":
                 executeWrite(s);
                 break;
-
             case "fs_read":
                 executeRead(s);
                 break;
@@ -46,8 +45,8 @@ public class Main {
     }
 
     private static void listUsers() {
-        out.println("manel");
-        out.println("joaquim");
+        String list = client.list();
+        out.println(list);
     }
 
     private static void init() {
