@@ -166,7 +166,10 @@ public class Service {
 			{
 				Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
 				List<String> certs = java.nio.file.Files.readAllLines(path);
-				certs.add(Security.ByteToHex(cert.getEncoded()));
+				String hexCert = Security.ByteToHex(cert.getEncoded());
+				if(certs.contains(hexCert))
+					return false;
+				certs.add(hexCert);
 				certs.set(0, Security.Hash(Utils.toByteArray(certs)));
 				java.nio.file.Files.write(path, certs);
 				return true;
