@@ -170,7 +170,7 @@ public class Service {
 				if(certs.contains(hexCert))
 					return false;
 				certs.add(hexCert);
-				certs.set(0, Security.Hash(Utils.toByteArray(certs)));
+				certs.add(0, Security.Hash(Utils.toByteArray(certs)));
 				java.nio.file.Files.write(path, certs);
 				return true;
 			}
