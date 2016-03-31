@@ -45,11 +45,10 @@ public class TestsS2 {
 			
 	        //test read with certificate as parameters
 	        byte[] finalbytes = 
-	        		client.read(Security.ByteToHex(certs.get(1).getEncoded()), 0, 10);
-	        byte[] buf = new byte[]{0,0,0,0,0,0,0,0,0,0};
+	        		client.read(Security.ByteToHex(certs.get(0).getPublicKey().getEncoded()), 0, 10);
 	        
-	        assertTrue(Arrays.equals(buf, finalbytes));
-		} catch (DependabilityException | CertificateEncodingException e) {
+	        assertTrue(finalbytes==null);
+		} catch (DependabilityException e) {
 			//Not important for this test
 			assertTrue(true);
 		}
