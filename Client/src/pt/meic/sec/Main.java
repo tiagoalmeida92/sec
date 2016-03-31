@@ -26,33 +26,41 @@ public class Main {
             index = s.length();
         }
         String command = s.substring(0, index);
-        switch (command){
-            case "fs_list":
-                listUsers();
-                break;
-            case "fs_init":
-                init();
-                break;
-            case "fs_write":
-                executeWrite(s);
-                break;
-            case "fs_read":
-                executeRead(s);
-                break;
-            default:
-                out.println("Command not found");
-                break;
+        try {
+            switch (command) {
+                case "fs_list":
+                    listUsers();
+                    break;
+                case "fs_init":
+                    init();
+                    break;
+                case "fs_write":
+                    executeWrite(s);
+                    break;
+                case "fs_read":
+                    executeRead(s);
+                    break;
+                default:
+                    out.println("Command not found");
+                    break;
+            }
+        }catch (Throwable t){
+            out.println("Error");
         }
     }
 
     private static void listUsers() {
         List<String> list = client.list();
         if(list != null) {
-            for (String key : list) {
-                out.println(key);
+            if(list.isEmpty()){
+                out.println("No users registered");
+            }else {
+                for (String key : list) {
+                    out.println(key);
+                }
             }
         }else{
-            out.println("Erro a obter lista de chaves");
+            out.println("Error obtaining file keys");
         }
 
 

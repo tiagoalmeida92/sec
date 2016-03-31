@@ -47,12 +47,14 @@ public class Client {
     
     public String init() throws DependabilityException {
         try {
-            smartCardSession = new SmartCardSession();
+            if(smartCardSession == null) {
+                smartCardSession = new SmartCardSession();
+            }
             certificate = smartCardSession.getCertificate();
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
 
-            if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))
-                    && registerCertificate(certificate)){
+            if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
+                boolean result = registerCertificate(certificate);
                 return publicKeyBlockId;
             }else{
                 return null;
@@ -68,8 +70,8 @@ public class Client {
             connectToServer();
             socketOutputStream.writeObject(STORE_PUBLIC_KEY);
             socketOutputStream.writeObject(certificate);
-            boolean result = socketInputStream.readBoolean();
-            return result;
+            boolean result = (boolean) socketInputStream.readBoolean();
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
             return false;

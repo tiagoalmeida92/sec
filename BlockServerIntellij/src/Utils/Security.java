@@ -23,18 +23,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
-import java.security.cert.CRLException;
-import java.security.cert.CertPathBuilder;
-import java.security.cert.CertStore;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.PKIXCertPathBuilderResult;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509CRL;
-import java.security.cert.X509CertSelector;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -48,6 +37,7 @@ import java.util.Set;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import sun.security.x509.X509CertImpl;
 
 /*
  * Reference to the certificates methods 
@@ -251,39 +241,50 @@ public class Security
 	public static boolean VerifyCertificate(X509Certificate cert) 
 			throws CertificateException, NoSuchAlgorithmException, 
 			NoSuchProviderException, FileNotFoundException {
-		
-		Set<X509Certificate> additionalCerts = 
-				GetCACertificates(Constants.CCCA1, Constants.CCCA2, Constants.CCCA3);
-		
-		// Check for self-signed certificate
-        if (IsSelfSigned(cert)) 
-        	return false;
-        
-        // Prepare a set of trusted root CA certificates
-        // and a set of intermediate certificates
-        Set<X509Certificate> trustedRootCerts = new HashSet<X509Certificate>();
-        Set<X509Certificate> intermediateCerts = new HashSet<X509Certificate>();
-        for (X509Certificate additionalCert : additionalCerts) {
-            if (IsSelfSigned(additionalCert)) {
-                trustedRootCerts.add(additionalCert);
-            } else {
-                intermediateCerts.add(additionalCert);
-            }
-        }
-        
-        try{
-        	
-        	// Attempt to build the certification chain and verify it
-        	VerifyCertificate(cert, trustedRootCerts, intermediateCerts);
-        	
-            // Check whether the certificate is revoked by the CRL
-            // given in its CRL distribution point extension
-            return VerifyCertificateCRLs(cert,Constants.CCCRL1, 
-            		Constants.CCCRL2, Constants.CCCRL3);
-            
-        }catch(GeneralSecurityException | IOException ex){
-        	return false;
-        }
+		CertificateFactory cf = CertificateFactory.getInstance("X.509");
+		X509Certificate certificate = (X509Certificate) cf.generateCertificate(new FileInputStream(Constants.CCCA6));
+		try {
+			boolean issuedBy = cert.getIssuerDN().getName().equals(certificate.getSubjectDN().getName());
+			cert.verify(certificate.getPublicKey());
+			return true;
+		} catch (InvalidKeyException | SignatureException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+
+//		Set<X509Certificate> additionalCerts =
+//				GetCACertificates(Constants.CCCA1, Constants.CCCA2, Constants.CCCA3);
+//
+//		// Check for self-signed certificate
+//        if (IsSelfSigned(cert))
+//        	return false;
+//
+//        // Prepare a set of trusted root CA certificates
+//        // and a set of intermediate certificates
+//        Set<X509Certificate> trustedRootCerts = new HashSet<X509Certificate>();
+//        Set<X509Certificate> intermediateCerts = new HashSet<X509Certificate>();
+//        for (X509Certificate additionalCert : additionalCerts) {
+//            if (IsSelfSigned(additionalCert)) {
+//                trustedRootCerts.add(additionalCert);
+//            } else {
+//                intermediateCerts.add(additionalCert);
+//            }
+//        }
+//
+//        try{
+//
+//        	// Attempt to build the certification chain and verify it
+//        	VerifyCertificate(cert, trustedRootCerts, intermediateCerts);
+//
+//            // Check whether the certificate is revoked by the CRL
+//            // given in its CRL distribution point extension
+//            return VerifyCertificateCRLs(cert,Constants.CCCRL1,
+//            		Constants.CCCRL2, Constants.CCCRL3);
+//
+//        }catch(GeneralSecurityException | IOException ex){
+//        	return false;
+//        }
 	}
 	
 	private static boolean VerifyCertificateCRLs(X509Certificate cert, String... crlsURLs) 
