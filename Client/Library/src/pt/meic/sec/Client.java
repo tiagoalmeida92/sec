@@ -46,19 +46,18 @@ public class Client {
         socketInputStream = new ObjectInputStream(socket.getInputStream());
     }
     
-    public String init() throws DependabilityException {
+    public void init() throws DependabilityException {
         try {
             if(smartCardSession == null) {
                 smartCardSession = new SmartCardSession();
             }
             certificate = smartCardSession.getCertificate();
+            String result = registerCertificate(certificate);
+            if(result.equals(Constants.SUC))
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
 
-            if(publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
-                boolean result = registerCertificate(certificate);
-                return publicKeyBlockId;
-            }else{
-                return null;
+            if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
+                throw new DependabilityException("File tampered. Try again");
             }
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | InvocationTargetException | PKCS11Exception | IllegalAccessException | NoSuchMethodException | PteidException e) {
@@ -66,21 +65,23 @@ public class Client {
         }
     }
 
-    private boolean registerCertificate(X509Certificate certificate) {
+    private String registerCertificate(X509Certificate certificate) {
         try {
             connectToServer();
             socketOutputStream.writeObject(STORE_PUBLIC_KEY);
             socketOutputStream.writeObject(certificate);
-            boolean result = socketInputStream.readBoolean();
+            String result = (String) socketInputStream.readObject();
             return result;
         } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+            return null;
+        } catch (ClassNotFoundException e) {
+            return null;
         }
     }
 
     public void write(int position, int size, byte[] contents) throws DependabilityException {
         try {
+            if(publicKeyBlockId == null){ throw new DependabilityException("Filesystem is not initialized"); }
             List<String> ids = getContentBlockReferences(publicKeyBlockId);
 
             int startIndex = position / Constants.CBLOCKLENGTH;
@@ -117,9 +118,10 @@ public class Client {
     }
 
 
-    public byte[] read(String id, int position, int readSize) throws DependabilityException {
+    public byte[] read(String publicKey, int position, int readSize) throws DependabilityException {
         try {
-            List<String> contentBlockIds = getContentBlockReferences(id);
+            byte[] publicKeyBytes = SecurityUtils.hexStringToByteArray(publicKey);
+            List<String> contentBlockIds = getContentBlockReferences(SecurityUtils.Hash(publicKeyBytes));
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (readSize / Constants.CBLOCKLENGTH);
             if (startIndex < contentBlockIds.size()) {

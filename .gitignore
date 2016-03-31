@@ -35,3 +35,6 @@
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
+*.cblock
+*.pkblock
+*.clients

@@ -53,17 +53,12 @@ public class Main {
     }
 
     private static void init() {
-        String clientFileId = null;
 		try {
-            clientFileId = client.init();
+            client.init();
+            out.println("Filesystem initialized.");
 		} catch (DependabilityException e) {
 			out.println("Dependability fault or attack: "+e.getMessage());
 		}
-        if(clientFileId != null) {
-            out.println("File created with id: " + clientFileId);
-        }else{
-            out.println("Init error");
-        }
     }
 
     private static void executeWrite(String s) {
@@ -78,10 +73,10 @@ public class Main {
         String contents = tokens[3];
         try {
 			client.write(position, size, contents.getBytes());
+            out.println("Write success");
 		} catch (DependabilityException e) {
 			out.println("Dependability fault or attack: "+e.getMessage());
 		}
-        out.println("Write success");
     }
 
     private static void executeRead(String s) {
@@ -91,12 +86,12 @@ public class Main {
             out.println("Invalid parameters");
             return;
         }
-        String blockId = tokens[1];
+        String publicKey = tokens[1];
         int position = Integer.parseInt(tokens[2]);
         int size = Integer.parseInt(tokens[3]);
         byte[] contents = null;
 		try {
-			contents = client.read(blockId, position, size);
+			contents = client.read(publicKey, position, size);
 			out.println(contents.length+" bytes read");
 		} catch (DependabilityException e) {
 			out.println("Dependability fault or attack: "+e.getMessage());
@@ -117,7 +112,7 @@ public class Main {
             }else {
                 for (X509Certificate key : list) {
                     PublicKey publicKey = key.getPublicKey();
-                    out.println(key.getSubjectDN().getName() + "\n" + SecurityUtils.Hash(publicKey.getEncoded()));
+                    out.println(key.getSubjectDN().getName() + "\n" +SecurityUtils.byteToHex(publicKey.getEncoded()));
                     out.println();
                 }
             }
@@ -131,6 +126,6 @@ public class Main {
         out.println("fs_list\nList fs users\n");
         out.println("fs_init\nCreate new filesystem user\n");
         out.println("fs_write <pos> <size> <contents>\nWrite to file\n");
-        out.println("fs_read <id> <pos> <size> \nRead file\n");
+        out.println("fs_read <publicKey> <pos> <size> \nRead file\n");
     }
 }
