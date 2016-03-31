@@ -1,5 +1,8 @@
 package pt.meic.sec;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Scanner;
 
@@ -47,23 +50,6 @@ public class Main {
         }catch (Throwable t){
             out.println("Error");
         }
-    }
-
-    private static void listUsers() {
-        List<String> list = client.list();
-        if(list != null) {
-            if(list.isEmpty()){
-                out.println("No users registered");
-            }else {
-                for (String key : list) {
-                    out.println(key);
-                }
-            }
-        }else{
-            out.println("Error obtaining file keys");
-        }
-
-
     }
 
     private static void init() {
@@ -116,6 +102,28 @@ public class Main {
 			out.println("Dependability fault or attack: "+e.getMessage());
 		}
         out.println(new String(contents));
+    }
+
+    private static void listUsers() throws NoSuchAlgorithmException {
+        List<X509Certificate> list = null;
+        try {
+            list = client.list();
+        } catch (DependabilityException e) {
+            out.println(e.getMessage());
+        }
+        if(list != null) {
+            if(list.isEmpty()){
+                out.println("No users registered");
+            }else {
+                for (X509Certificate key : list) {
+                    PublicKey publicKey = key.getPublicKey();
+                    out.println(key.getSubjectDN().getName() + "\n" + SecurityUtils.Hash(publicKey.getEncoded()));
+                    out.println();
+                }
+            }
+        }else{
+            out.println("Error obtaining file keys");
+        }
     }
 
     private static void displayCommands() {

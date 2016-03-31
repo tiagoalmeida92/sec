@@ -3,13 +3,14 @@ package pt.meic.sec;
 import pteidlib.PteidException;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.security.*;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.*;
 
 
@@ -70,8 +71,8 @@ public class Client {
             connectToServer();
             socketOutputStream.writeObject(STORE_PUBLIC_KEY);
             socketOutputStream.writeObject(certificate);
-            boolean result = (boolean) socketInputStream.readBoolean();
-            return true;
+            boolean result = socketInputStream.readBoolean();
+            return result;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -235,13 +236,36 @@ public class Client {
     }
 
 
-    public List<String> list() {
+    public List<X509Certificate> list() throws DependabilityException {
         try {
             connectToServer();
             socketOutputStream.writeObject(READ_PUBLIC_KEYS);
             List<String> result = (List<String>) socketInputStream.readObject();
-            return result;
+            if(result.size() < 2){
+                return new ArrayList<>();
+            }
+            String hash = result.get(0);
+            result.remove(0);
+            byte[] data = Utils.toByteArray(result);
+            boolean valid = SecurityUtils.verifyHash(data, hash);
+            if(!valid){
+                throw new DependabilityException("Certificates Tampered");
+            }
+            List<X509Certificate> certificates = new ArrayList<>();
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            for (String certHexa: result){
+                byte[] certBytes = SecurityUtils.hexStringToByteArray(certHexa);
+                X509Certificate certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+                certificates.add(certificate);
+            }
+            return certificates;
         } catch (IOException | ClassNotFoundException e) {
+            return new ArrayList<>();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        } catch (CertificateException e) {
+            e.printStackTrace();
             return new ArrayList<>();
         }
 
