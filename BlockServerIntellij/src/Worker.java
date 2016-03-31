@@ -52,7 +52,7 @@ public class Worker implements Runnable {
 					break;
 				case "storePubKey":
 					cert = (X509Certificate) inputStream.readObject();
-					outputStream.writeObject(Service.storePubKey(cert));
+					outputStream.writeBoolean(Service.storePubKey(cert));
 					break;
 				case "readPubKeys":
 					outputStream.writeObject(Service.readPubKeys());

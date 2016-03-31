@@ -1,5 +1,6 @@
 package pt.meic.sec;
 
+import java.util.List;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -45,8 +46,16 @@ public class Main {
     }
 
     private static void listUsers() {
-        String list = client.list();
-        out.println(list);
+        List<String> list = client.list();
+        if(list != null) {
+            for (String key : list) {
+                out.println(key);
+            }
+        }else{
+            out.println("Erro a obter lista de chaves");
+        }
+
+
     }
 
     private static void init() {

@@ -17,6 +17,7 @@ public class Constants {
 
 	public static final int SIGNATURE_SIZE = 128;
 	public static final int PUBLIC_KEY_SIZE = 162;
+	public static final int TIME_STAMP_SIZE = 23;
 	public static final int CONTENT_BLOCK_ID_SIZE = 64;
 	public static final int BLOCK_HASH_SIZE = 64;
 	

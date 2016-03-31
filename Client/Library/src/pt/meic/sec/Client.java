@@ -216,7 +216,8 @@ public class Client {
         try {
 			if(SecurityUtils.verifyHash(key.getEncoded(), publicKeyBlockId)
 			        && SecurityUtils.Verify(Arrays.copyOfRange(pkBlock, Constants.SIGNATURE_SIZE, pkBlock.length), signature, key)){
-			    byte[] ids = Arrays.copyOfRange(pkBlock, publicKeyEndPos, pkBlock.length);
+                int timestampEndPos = publicKeyEndPos + Constants.TIME_STAMP_SIZE;
+			    byte[] ids = Arrays.copyOfRange(pkBlock, timestampEndPos, pkBlock.length);
 
 			    for (int i = 0; i < ids.length; i+= Constants.BLOCK_HASH_SIZE) {
 			        String blockId = new String(Arrays.copyOfRange(ids, i, i+ Constants.BLOCK_HASH_SIZE));
@@ -232,14 +233,14 @@ public class Client {
     }
 
 
-    public String list() {
+    public List<String> list() {
         try {
             connectToServer();
             socketOutputStream.writeObject(READ_PUBLIC_KEYS);
-            String result = (String) socketInputStream.readObject();
+            List<String> result = (List<String>) socketInputStream.readObject();
             return result;
         } catch (IOException | ClassNotFoundException e) {
-            return null;
+            return new ArrayList<>();
         }
 
     }
