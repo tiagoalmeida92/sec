@@ -177,7 +177,8 @@ public class Service {
 				}
 				else
 					certs.add(hexCert);
-				certs.set(0, Security.Hash(Utils.toByteArray(certs)));
+				certs.remove(0);
+				certs.add(0, Security.Hash(Utils.toByteArray(certs)));
 				java.nio.file.Files.write(path, certs);
 				return Constants.SUCCESS;
 			}
