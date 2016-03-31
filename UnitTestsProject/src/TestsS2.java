@@ -2,6 +2,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
@@ -31,20 +32,20 @@ public class TestsS2 {
 			
 			//Init Client library
 			Client client = new Client("localhost", Constants.PORT);
-			//storePubKey
-	        String publicKeyBlockId = client.init();
+			//test storePubKey
+	        client.init();
 	        
-	        //readPubKeys
+	        //test readPubKeys
 	        List<X509Certificate> certs = client.list();
 	        assertFalse(certs.isEmpty());
 			
-//	        byte[] finalbytes = 
-//	        		client.read(certs.get(1), 0, 10);
-//	        byte[] buf = new byte[]{0,0,0,0,0,0,0,0,0,0};
-//	        
-//	        assertTrue(Arrays.equals(buf, finalbytes));
+	        //test read with certificate as parameters
+	        byte[] finalbytes = 
+	        		client.read(Security.ByteToHex(certs.get(1).getEncoded()), 0, 10);
+	        byte[] buf = new byte[]{0,0,0,0,0,0,0,0,0,0};
 	        
-		} catch (DependabilityException e) {
+	        assertTrue(Arrays.equals(buf, finalbytes));
+		} catch (DependabilityException | CertificateEncodingException e) {
 			//Not important for this test
 			assertTrue(true);
 		}
@@ -61,7 +62,36 @@ public class TestsS2 {
 	@Test
 	public void testIntegrityOfTheNewFeatures()
 	{
-		
+		MultiThread server = null;
+		try{
+			//Init Block server
+			server = new MultiThread();
+			new Thread(server).start();
+	
+			try {
+			    Thread.sleep(5 * 1000);
+			} catch (InterruptedException e) {
+			    e.printStackTrace();
+			}
+			
+			//Init Client library
+			Client client = new Client("localhost", Constants.PORT);
+			//test storePubKey
+	        client.init();
+			
+	        
+		} catch (DependabilityException e) {
+			//Not important for this test
+			assertTrue(true);
+		}
+		finally{
+			Files.DeleteFile(Constants.CERTIFICATESFILENAME);
+			Files.DeleteAllBlockServerFiles();
+			
+			//System.out.println("Stopping Server");
+			if(server != null)
+				server.stop();
+		}
 	}
 	
 	
