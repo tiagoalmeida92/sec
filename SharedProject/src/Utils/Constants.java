@@ -33,6 +33,7 @@ public class Constants {
 	public static final String CCCA1 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 001.cer";
 	public static final String CCCA2 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 002.cer";
 	public static final String CCCA3 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 003.cer";
+	public static final String CCCA6 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 006.cer";
 	
 	//CRLs paths
 	public static final String CCCRL1 = "https://pki.cartaodecidadao.pt/publico/lrc/cc_ec_cidadao_crl001_crl.crl";
