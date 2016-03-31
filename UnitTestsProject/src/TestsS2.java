@@ -1,8 +1,12 @@
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.security.NoSuchAlgorithmException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
@@ -76,13 +80,15 @@ public class TestsS2 {
 			
 			//Init Client library
 			Client client = new Client("localhost", Constants.PORT);
-			//test storePubKey
-	        client.init();
+			//test storePubKey with random intermediate certificate
+			Certificate c = CertificateFactory.getInstance("X.509").generateCertificate(new FileInputStream(Constants.CCCA1));
+			client.init((X509Certificate)c);
 			
 	        
-		} catch (DependabilityException e1) {
+		} catch (DependabilityException | CertificateException | FileNotFoundException e1) {
 			//Important for this test
-			assertTrue(e1.getMessage().equals(Constants.CERTIFICATENOTVALIDORTAMPERED));
+			assertTrue(e1.getMessage().equals(Constants.CERTIFICATENOTVALID) ||
+					e1.getMessage().equals(Constants.CERTIFICATETAMPERED));
 		}
 		finally{
 			Files.DeleteFile(Constants.CERTIFICATESFILENAME);

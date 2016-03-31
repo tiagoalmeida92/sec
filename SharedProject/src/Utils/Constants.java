@@ -28,6 +28,8 @@ public class Constants {
 	// Client Dependability exception messages
 	public static final String SUCCESS = "Success";
 	public static final String CERTIFICATENOTVALIDORTAMPERED = "An attacker tampered the received certificate or is not valid or was revogated";
+	public static final String CERTIFICATENOTVALID = "Certificate or is not valid or was revogated.";
+	public static final String CERTIFICATETAMPERED = "An attacker tampered the received certificate.";
 	public static final String CERTIFICATEALREADYREGISTERED = "Certificate already registered.";
 	public static final String TAMPEREDAKEYEXCEPTIONMESSAGE = "Block not found OR An attacker tampered the identifier of a block";
 	public static final String TAMPEREDSIGNATUREEXCEPTIONMESSAGE = "An attacker tampered the signature of a block";

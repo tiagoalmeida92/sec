@@ -264,7 +264,6 @@ public class Security {
 
         } catch (Throwable e) {
             System.out.println("[Catch] Exception: " + e.getMessage());
-            e.printStackTrace();
             return false;
 
         }
