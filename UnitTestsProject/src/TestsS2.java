@@ -1,7 +1,10 @@
 import static org.junit.Assert.*;
 
+import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import org.junit.Test;
 
@@ -28,7 +31,38 @@ public class TestsS2 {
 			assertTrue(false);
 		}
 		finally{
+			
+		}
+		
+		MultiThread server = null;
+		try{
+			//Init Block server
+			server = new MultiThread();
+			new Thread(server).start();
+	
+			try {
+			    Thread.sleep(5 * 1000);
+			} catch (InterruptedException e) {
+			    e.printStackTrace();
+			}
+			
+			//Init Client library
+			Client client = new Client("localhost", Constants.PORT);
+	        String publicKeyBlockId = client.init();
+			
+	        assertTrue();
+			
+		} catch (DependabilityException e) {
+			//Not important for this test
+			assertTrue(true);
+		}
+		finally{
 			Files.DeleteFile(Constants.CERTIFICATESFILEPATH);
+			Files.DeleteAllBlockServerFiles();
+			
+			//System.out.println("Stopping Server");
+			if(server != null)
+				server.stop();
 		}
 	}
 	
