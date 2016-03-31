@@ -54,11 +54,11 @@ public class Client {
             certificate = smartCardSession.getCertificate();
             String result = registerCertificate(certificate);
             if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
-                throw new DependabilityException("Certificate error");
+                throw new DependabilityException(Constants.CERTIFICATENOTVALID);
             }
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
             if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
-                throw new DependabilityException("File tampered. Try again");
+                throw new DependabilityException(Constants.CERTIFICATETAMPERED);
             }
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | InvocationTargetException | PKCS11Exception | IllegalAccessException | NoSuchMethodException | PteidException e) {
@@ -71,11 +71,11 @@ public class Client {
 
             String result = registerCertificate(certificate);
             if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
-                throw new DependabilityException("Certificate error");
+                throw new DependabilityException(Constants.CERTIFICATENOTVALID);
             }
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
             if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
-                throw new DependabilityException("File tampered. Try again");
+                throw new DependabilityException(Constants.CERTIFICATETAMPERED);
             }
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException e) {
