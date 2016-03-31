@@ -80,9 +80,9 @@ public class TestsS2 {
 	        client.init();
 			
 	        
-		} catch (DependabilityException e) {
-			//Not important for this test
-			assertTrue(true);
+		} catch (DependabilityException e1) {
+			//Important for this test
+			assertTrue(e1.getMessage().equals(Constants.CERTIFICATENOTVALIDORTAMPERED));
 		}
 		finally{
 			Files.DeleteFile(Constants.CERTIFICATESFILENAME);
