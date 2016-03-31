@@ -66,6 +66,23 @@ public class Client {
         }
     }
 
+    public void init(X509Certificate certificate) throws DependabilityException {
+        try {
+
+            String result = registerCertificate(certificate);
+            if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
+                throw new DependabilityException("Certificate error");
+            }
+            publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
+            if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
+                throw new DependabilityException("File tampered. Try again");
+            }
+
+        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String registerCertificate(X509Certificate certificate) {
         try {
             connectToServer();
