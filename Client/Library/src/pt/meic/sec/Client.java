@@ -53,9 +53,10 @@ public class Client {
             }
             certificate = smartCardSession.getCertificate();
             String result = registerCertificate(certificate);
-            if(result.equals(Constants.SUC))
+            if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
+                throw new DependabilityException("Certificate error");
+            }
             publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
-
             if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
                 throw new DependabilityException("File tampered. Try again");
             }
