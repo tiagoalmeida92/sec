@@ -12,6 +12,7 @@ public class Constants {
 	public static final String PKBLOCKPATH = new File("").getAbsolutePath()+"\\pkblocks\\";
 	public static final String CBLOCKPATH = new File("").getAbsolutePath()+"\\cblocks\\";
 	public static final String CERTIFICATESFILEPATH = new File("").getAbsolutePath()+"\\certificates.clients";
+	public static final String CERTIFICATESFILENAME = "certificates.clients";
 	
 	//Content blocks length
 	public static final int CBLOCKLENGTH = 6000; //10KB
@@ -30,11 +31,16 @@ public class Constants {
 	public static final String TAMPEREDWITHCONTENTBLOCKEXCEPTIONMESSAGE = "An attacker tampered the received content block";
 
 	//CA certificates path
-	public static final String CCCA1 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 001.cer";
-	public static final String CCCA2 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 002.cer";
-	public static final String CCCA3 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 003.cer";
-	public static final String CCCA6 = new File("").getAbsolutePath() + "\\Cartao de Cidadao 006.cer";
-	
+	public static final String CCCA1 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0001.cer";
+	public static final String CCCA2 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0002.cer";
+	public static final String CCCA3 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0003.cer";
+	public static final String CCCA4 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0004.cer";
+	public static final String CCCA5 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0005.cer";
+	public static final String CCCA6 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0006.cer";
+	public static final String CCCA7 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0007.cer";
+	public static final String CCCA8 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0008.cer";
+	public static final String CCCA9 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0009.cer";
+	public static final String CCCA10 = new File("").getAbsolutePath() + "\\EC de Autenticacao do Cartao de Cidadao 0010.cer";
 	//CRLs paths
 	public static final String CCCRL1 = "https://pki.cartaodecidadao.pt/publico/lrc/cc_ec_cidadao_crl001_crl.crl";
 	public static final String CCCRL2 = "https://pki.cartaodecidadao.pt/publico/lrc/cc_ec_cidadao_crl002_crl.crl";
@@ -42,5 +48,7 @@ public class Constants {
 
 	//Freshness - Counter replay attacks
 	public static final long FRESHNESSTIMESTAMP = 5000;
+
+	
 	
 }

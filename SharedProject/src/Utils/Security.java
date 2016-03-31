@@ -223,19 +223,23 @@ public class Security {
 
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            FileInputStream in = new FileInputStream(Constants.CCCA6);
-            X509Certificate trust = (X509Certificate) cf.generateCertificate(in);
 
-            if(!cert.getIssuerDN().getName().equals(trust.getSubjectDN().getName())){
-                return false;
-            }
-            cert.verify(trust.getPublicKey());
-
-            /* Construct a CertPathBuilder */
-            TrustAnchor anchor = new TrustAnchor(trust, null);
+            Set<X509Certificate> CAs = GetCACertificates(Constants.CCCA1,
+            		Constants.CCCA2,Constants.CCCA3,Constants.CCCA4,Constants.CCCA5,
+            		Constants.CCCA6,Constants.CCCA7,Constants.CCCA8,Constants.CCCA9,
+            		Constants.CCCA10);
             Set<TrustAnchor> trustAnchors = new HashSet<>();
-            trustAnchors.add(anchor);
-
+            for(X509Certificate trust : CAs)
+            {
+            	if(cert.getIssuerDN().getName().equals(trust.getSubjectDN().getName())){
+	                cert.verify(trust.getPublicKey());
+	
+	                /* Construct a CertPathBuilder */
+	                TrustAnchor anchor = new TrustAnchor(trust, null);                
+	                trustAnchors.add(anchor);
+            	}
+            }
+            
             X509CertSelector certSelector = new X509CertSelector();
             certSelector.setCertificate(cert);
 

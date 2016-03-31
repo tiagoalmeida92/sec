@@ -1,10 +1,10 @@
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import org.junit.Test;
 
@@ -17,23 +17,6 @@ public class TestsS2 {
 	@Test
 	public void testTheStorePubKeyTheReadPubKeysAndVerifyIntegrity()
 	{
-		try {
-			boolean success = false;
-			//Create a certificate from the CC to test
-			//assertTrue(success=Service.storePubKey(Security.GenerateKeyPair().getPublic()));
-			if(success)
-			{
-				List<String> hexCerts = Service.readPubKeys();
-				//VerifyingIntegrity
-				assertTrue(hexCerts.get(0).equals(Security.Hash(Utils.toByteArray(hexCerts))));
-			}
-		} catch (NoSuchAlgorithmException e) {
-			assertTrue(false);
-		}
-		finally{
-			
-		}
-		
 		MultiThread server = null;
 		try{
 			//Init Block server
@@ -48,16 +31,25 @@ public class TestsS2 {
 			
 			//Init Client library
 			Client client = new Client("localhost", Constants.PORT);
+			//storePubKey
 	        String publicKeyBlockId = client.init();
+	        
+	        //readPubKeys
+	        List<X509Certificate> certs = client.list();
+	        assertFalse(certs.isEmpty());
 			
-	        assertTrue();
-			
+//	        byte[] finalbytes = 
+//	        		client.read(certs.get(1), 0, 10);
+//	        byte[] buf = new byte[]{0,0,0,0,0,0,0,0,0,0};
+//	        
+//	        assertTrue(Arrays.equals(buf, finalbytes));
+	        
 		} catch (DependabilityException e) {
 			//Not important for this test
 			assertTrue(true);
 		}
 		finally{
-			Files.DeleteFile(Constants.CERTIFICATESFILEPATH);
+			Files.DeleteFile(Constants.CERTIFICATESFILENAME);
 			Files.DeleteAllBlockServerFiles();
 			
 			//System.out.println("Stopping Server");
@@ -65,5 +57,12 @@ public class TestsS2 {
 				server.stop();
 		}
 	}
+	
+	@Test
+	public void testIntegrityOfTheNewFeatures()
+	{
+		
+	}
+	
 	
 }

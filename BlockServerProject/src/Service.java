@@ -165,12 +165,20 @@ public class Service {
 			if(Security.VerifyCertificate(cert))
 			{
 				Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+				boolean fileNotExists = new File(Constants.CERTIFICATESFILEPATH)
+						.createNewFile();
 				List<String> certs = java.nio.file.Files.readAllLines(path);
 				String hexCert = Security.ByteToHex(cert.getEncoded());
 				if(certs.contains(hexCert))
 					return false;
-				certs.add(hexCert);
-				certs.add(0, Security.Hash(Utils.toByteArray(certs)));
+				if(fileNotExists)
+				{
+					certs.add(0,"none");
+					certs.add(1,hexCert);
+				}
+				else
+					certs.add(hexCert);
+				certs.set(0, Security.Hash(Utils.toByteArray(certs)));
 				java.nio.file.Files.write(path, certs);
 				return true;
 			}
