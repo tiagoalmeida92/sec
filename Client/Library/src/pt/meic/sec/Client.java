@@ -56,9 +56,19 @@ public class Client {
             if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
                 throw new DependabilityException(Constants.CERTIFICATENOTVALID);
             }
-            publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
-            if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
-                throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+            else
+            {
+            	if(result.equals(Constants.CERTIFICATEALREADYREGISTERED))
+            		publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
+            	else{
+            		if(result.equals(Constants.SUCCESS))
+            		{
+			            publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
+			            if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
+			                throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+			            }
+            		}
+            	}
             }
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | InvocationTargetException | PKCS11Exception | IllegalAccessException | NoSuchMethodException | PteidException e) {
@@ -73,9 +83,19 @@ public class Client {
             if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
                 throw new DependabilityException(Constants.CERTIFICATENOTVALID);
             }
-            publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
-            if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
-                throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+            else
+            {
+            	if(result.equals(Constants.CERTIFICATEALREADYREGISTERED))
+            		publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
+            	else{
+            		if(result.equals(Constants.SUCCESS))
+            		{
+			            publicKeyBlockId = writePublicKeyBlock(certificate.getPublicKey(), new ArrayList<>());
+			            if(!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))){
+			                throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+			            }
+            		}
+            	}
             }
 
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException e) {
