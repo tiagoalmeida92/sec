@@ -1,4 +1,4 @@
-import static org.junit.Assert.assertNull;
+
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
@@ -7,11 +7,12 @@ import java.util.Random;
 
 import org.junit.Test;
 
+
 import Utils.Constants;
 import Utils.Files;
 import Utils.Security;
 
-public class Tests {
+public class TestsS1 {
 
 	private final String USERNAME = "test12";
 	private final String PASSWORD = "21tset";
@@ -162,16 +163,16 @@ public class Tests {
 	
 	// SLOW creation of the KeyStore. Cannot be tested. Always failure when verifying
 	// the existance of the file
-		@Test
-		public void keyStoreFileCreationAndVerification()
-		{
-			//assertTrue(Security.CreateKeyStore(USERNAME, PASSWORD));
-			//assertTrue(Files.Exists(USERNAME+Constants.KEYSTOREEXTENSION));
-			//assertNotNull(Security.GetKeyPair(USERNAME, PASSWORD));
-			Security.CreateKeyStore(USERNAME, PASSWORD);
-			Files.Exists(USERNAME+Constants.KEYSTOREEXTENSION);
-			Security.GetKeyPair(USERNAME, PASSWORD);
-			Files.DeleteFile(USERNAME+Constants.KEYSTOREEXTENSION);
-			assertTrue(true);
-		}
+//		@Test
+//		public void keyStoreFileCreationAndVerification()
+//		{
+//			//assertTrue(Security.CreateKeyStore(USERNAME, PASSWORD));
+//			//assertTrue(Files.Exists(USERNAME+Constants.KEYSTOREEXTENSION));
+//			//assertNotNull(Security.GetKeyPair(USERNAME, PASSWORD));
+//			Security.CreateKeyStore(USERNAME, PASSWORD);
+//			Files.Exists(USERNAME+Constants.KEYSTOREEXTENSION);
+//			Security.GetKeyPair(USERNAME, PASSWORD);
+//			Files.DeleteFile(USERNAME+Constants.KEYSTOREEXTENSION);
+//			assertTrue(true);
+//		}
 }
