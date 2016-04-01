@@ -3,26 +3,43 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import Utils.Constants;
 import Utils.Files;
 import Utils.Security;
+import Utils.Utils;
 
 public class Service {
 
+	/*
+	 * S1
+	 */
 	public static String putK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		try {
+			final int fromIndex = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
+			final String srcTimestamp = new String(
+					Arrays.copyOfRange(data, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE),"UTF-8");
+			if(!Security.VerifyFreshness(srcTimestamp))
+				return "[Integrity] Old request. Probably a replay attack.";
 			if(!Security.Verify(data, signature, publicK))
 				return "[Integrity] Integrity failure or bad public key.";
-		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
-			return "[Integrity] Invalid key or signature exception.";
+		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException | UnsupportedEncodingException e) {
+			return "[Integrity] Invalid key, encoding or signature exception.";
 		}
 		
 		String fileName,fileStatus;
@@ -39,6 +56,9 @@ public class Service {
 		return "[Fault] "+fileStatus;
 	}
 	
+	/*
+	 * S1
+	 */
 	public static String putH(byte[] data)
 	{
 		String fileStatus;
@@ -58,6 +78,9 @@ public class Service {
 		return "[3] data received its bigger than " + Constants.CBLOCKLENGTH + "bytes";
 	}
 	
+	/*
+	 * S1
+	 */
 	public static byte[] get(String id)
 	{
 		BufferedInputStream reader = null;
@@ -104,6 +127,9 @@ public class Service {
 		}
 	}
 
+	/*
+	 * S1
+	 */
 	public static void filesGarbageCollection() 
 	{
 		ArrayList<File> contentBlock = new ArrayList<File>();
@@ -126,6 +152,52 @@ public class Service {
 		for(File f : contentBlock)
 		{
 			f.delete();
+		}
+	}
+	
+	/*
+	 * S2
+	 */
+	public static String storePubKey(X509Certificate cert)
+	{
+		try {
+			if(Security.VerifyCertificate(cert))
+			{
+				Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+				boolean fileNotExists = new File(Constants.CERTIFICATESFILEPATH)
+						.createNewFile();
+				List<String> certs = java.nio.file.Files.readAllLines(path);
+				String hexCert = Security.ByteToHex(cert.getEncoded());
+				if(certs.contains(hexCert))
+					return Constants.CERTIFICATEALREADYREGISTERED;
+				if(fileNotExists)
+				{
+					certs.add(0,"none");
+					certs.add(1,hexCert);
+				}
+				else
+					certs.add(hexCert);
+				certs.remove(0);
+				certs.add(0, Security.Hash(Utils.toByteArray(certs)));
+				java.nio.file.Files.write(path, certs);
+				return Constants.SUCCESS;
+			}
+		} catch (CertificateException | NoSuchAlgorithmException | NoSuchProviderException | IOException e) {
+			return Constants.CERTIFICATENOTVALIDORTAMPERED;
+		}
+		return Constants.CERTIFICATENOTVALIDORTAMPERED;
+	}
+	
+	/*
+	 * S2
+	 */
+	public static List<String> readPubKeys()
+	{
+		Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+		try {
+			return java.nio.file.Files.readAllLines(path);		
+		} catch (IOException e) {
+			return null;
 		}
 	}
 }

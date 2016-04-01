@@ -1,1 +1,1 @@
-java -cp bin ServerMain
+java -cp "bin;bin\*" ServerMain

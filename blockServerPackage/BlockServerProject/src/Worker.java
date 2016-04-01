@@ -3,6 +3,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 
 public class Worker implements Runnable {
 
@@ -22,6 +23,7 @@ public class Worker implements Runnable {
 			byte[] data,signature;
 			PublicKey publicK;
 			String method,id;
+			X509Certificate cert;
 			inputStream = new ObjectInputStream(connection.getInputStream());
 			outputStream = new ObjectOutputStream(connection.getOutputStream());
 			method = (String) inputStream.readObject();
@@ -47,6 +49,15 @@ public class Worker implements Runnable {
 					id = (String) inputStream.readObject();
 					data = Service.get(id);
 					outputStream.writeObject(data);
+					break;
+				case "storePubKey":
+					cert = (X509Certificate) inputStream.readObject();
+					String result = Service.storePubKey(cert);
+					outputStream.writeObject(result);
+					outputStream.flush();
+					break;
+				case "readPubKeys":
+					outputStream.writeObject(Service.readPubKeys());
 					break;
 				default: 
 					break;

@@ -1,12 +1,8 @@
-1 build shared
+1 build server and shared
 
-javac -d bin SharedProject\src\Utils\*.java
+> build.bat
 
-2 build server
+2 Running the program 
 
-javac -cp .\bin -d bin BlockServerProject\src\*.java
+> run.bat
 
-
-4 Running the program 
-
-java -cp bin ServerMain
