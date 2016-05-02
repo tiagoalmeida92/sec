@@ -17,6 +17,15 @@ public class MultiThread implements Runnable{
 	private Thread runningThread = null;
 	private Worker worker = null;
 	
+	public MultiThread()
+	{	
+	}
+	
+	public MultiThread(int port)
+	{
+		serverPort = port;
+	}
+	
 	public void run(){
         synchronized(this){
             this.runningThread = Thread.currentThread();
