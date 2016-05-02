@@ -1,13 +1,12 @@
 package pt.meic.sec;
 
-import pteidlib.PteidException;
-import sun.security.pkcs11.wrapper.PKCS11Exception;
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
@@ -31,8 +30,8 @@ public class Client {
     
     //Public because of dependability testing
     public String publicKeyBlockId;
-    private SmartCardSession smartCardSession;
     private X509Certificate certificate;
+    private PrivateKey privateKey;
 
 
     public Client(String hostname, int portNumber) {
@@ -48,10 +47,10 @@ public class Client {
     
     public void init() throws DependabilityException {
         try {
-            if(smartCardSession == null) {
-                smartCardSession = new SmartCardSession();
-            }
-            certificate = smartCardSession.getCertificate();
+
+            if(certificate != null) return;
+            createSelfCertificate();
+
             String result = registerCertificate(certificate);
             if(result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)){
                 throw new DependabilityException(Constants.CERTIFICATENOTVALID);
@@ -71,9 +70,22 @@ public class Client {
             	}
             }
 
-        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | InvocationTargetException | PKCS11Exception | IllegalAccessException | NoSuchMethodException | PteidException e) {
+        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException | NoSuchProviderException | SignatureException | CertificateException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void createSelfCertificate() throws NoSuchProviderException, NoSuchAlgorithmException, IOException, InvalidKeyException, CertificateException, SignatureException {
+
+        CertAndKeyGen keypair = new CertAndKeyGen("RSA", "SHA1WithRSA", null);
+
+        String username = System.getProperty("user.name");
+        X500Name x500Name = new X500Name(username, "Tecnico", "SEC", "Porto Salvo", "Oeiras", "Portugal");
+
+        keypair.generate(1024);
+
+        certificate = keypair.getSelfCertificate(x500Name, 60*60*24*365);
+        privateKey = keypair.getPrivateKey();
     }
 
     public void init(X509Certificate certificate) throws DependabilityException {
@@ -228,19 +240,19 @@ public class Client {
 
         byte[] signature;
 		try {
-			signature = smartCardSession.sign(data);
+			signature = SecurityUtils.Sign(data, privateKey);
 	
 	        byte[] pkBlock = Utils.concat(signature, data);
 	        socketOutputStream.writeObject(pkBlock);
 	
-	        socketOutputStream.writeObject(smartCardSession.sign(pkBlock));
+	        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlock, privateKey));
 	        socketOutputStream.writeObject(publicKey);
 	        String id = (String) socketInputStream.readObject();
 	        if(id.indexOf("[Integrity]") != -1)
 	        	throw new DependabilityException(id);
 	        
 	        return id;
-		} catch (PKCS11Exception e) {
+		} catch (SignatureException | InvalidKeyException e) {
             throw new DependabilityException();
         }
     }
@@ -281,7 +293,7 @@ public class Client {
             connectToServer();
             socketOutputStream.writeObject(READ_PUBLIC_KEYS);
             List<String> result = (List<String>) socketInputStream.readObject();
-            if(result.size() < 2){
+            if(result == null || result.size() < 2){
                 return new ArrayList<>();
             }
             String hash = result.get(0);
