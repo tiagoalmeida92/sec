@@ -28,10 +28,10 @@ public class SecurityUtils
 
 
 
-    public static byte[] Sign(byte[] data, KeyPair keyPair) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException
+    public static byte[] Sign(byte[] data, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException
     {
         Signature sig = Signature.getInstance("SHA256withRSA");
-        sig.initSign(keyPair.getPrivate());
+        sig.initSign(privateKey);
         sig.update(data);
         return sig.sign();
     }

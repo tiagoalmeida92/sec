@@ -41,21 +41,21 @@ public class Service {
 		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException | UnsupportedEncodingException e) {
 			return "[Integrity] Invalid key, encoding or signature exception.";
 		}
-		
+
 		String fileName,fileStatus;
 		try {
 			fileName = Security.GetPublicKeyHash(publicK);
 		} catch (NoSuchAlgorithmException e1) {
 			return "[Integrity] Invalid digest algorithm.";
 		}
-		
+
 		if((fileStatus = Files.WriteFile(Constants.PKBLOCKPATH+fileName+Constants.PKBLOCKEXTENSION,data)).equals("Success"))
 		{
 			return fileName;
 		}
 		return "[Fault] "+fileStatus;
 	}
-	
+
 	/*
 	 * S1
 	 */
@@ -77,7 +77,7 @@ public class Service {
 		}
 		return "[3] data received its bigger than " + Constants.CBLOCKLENGTH + "bytes";
 	}
-	
+
 	/*
 	 * S1
 	 */
@@ -85,16 +85,16 @@ public class Service {
 	{
 		BufferedInputStream reader = null;
 		try {
-			
+
 			//Get ContentBlock data
 			byte[] data = new byte[Constants.CBLOCKLENGTH];
 			reader = new BufferedInputStream(new FileInputStream(Constants.CBLOCKPATH+id+Constants.CBLOCKEXTENSION));
 			reader.read(data, 0, data.length);
 			reader.close();
 			return data;
-			
+
 		} catch (FileNotFoundException e) {
-			
+
 			//Get PublicKeyBlock data
 			String pkFilePath = Constants.PKBLOCKPATH+id+Constants.PKBLOCKEXTENSION;
 			File file = new File(pkFilePath);
@@ -112,9 +112,9 @@ public class Service {
 				}
 				return data;
 			}
-			else 
+			else
 				return null;
-			
+
 		} catch (IOException e) {
 			return null;
 		} finally {
@@ -130,7 +130,7 @@ public class Service {
 	/*
 	 * S1
 	 */
-	public static void filesGarbageCollection() 
+	public static void filesGarbageCollection()
 	{
 		ArrayList<File> contentBlock = new ArrayList<File>();
 		ArrayList<File> publicBlock = new ArrayList<File>();
@@ -154,40 +154,38 @@ public class Service {
 			f.delete();
 		}
 	}
-	
+
 	/*
 	 * S2
 	 */
 	public static String storePubKey(X509Certificate cert)
 	{
 		try {
-			if(Security.VerifyCertificate(cert))
+
+			Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
+			boolean fileNotExists = new File(Constants.CERTIFICATESFILEPATH)
+					.createNewFile();
+			List<String> certs = java.nio.file.Files.readAllLines(path);
+			String hexCert = Security.ByteToHex(cert.getEncoded());
+			if(certs.contains(hexCert))
+				return Constants.CERTIFICATEALREADYREGISTERED;
+			if(fileNotExists)
 			{
-				Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
-				boolean fileNotExists = new File(Constants.CERTIFICATESFILEPATH)
-						.createNewFile();
-				List<String> certs = java.nio.file.Files.readAllLines(path);
-				String hexCert = Security.ByteToHex(cert.getEncoded());
-				if(certs.contains(hexCert))
-					return Constants.CERTIFICATEALREADYREGISTERED;
-				if(fileNotExists)
-				{
-					certs.add(0,"none");
-					certs.add(1,hexCert);
-				}
-				else
-					certs.add(hexCert);
-				certs.remove(0);
-				certs.add(0, Security.Hash(Utils.toByteArray(certs)));
-				java.nio.file.Files.write(path, certs);
-				return Constants.SUCCESS;
+				certs.add(0,"none");
+				certs.add(1,hexCert);
 			}
-		} catch (CertificateException | NoSuchAlgorithmException | NoSuchProviderException | IOException e) {
+			else
+				certs.add(hexCert);
+			certs.remove(0);
+			certs.add(0, Security.Hash(Utils.toByteArray(certs)));
+			java.nio.file.Files.write(path, certs);
+			return Constants.SUCCESS;
+
+		} catch (CertificateException | NoSuchAlgorithmException | IOException e) {
 			return Constants.CERTIFICATENOTVALIDORTAMPERED;
 		}
-		return Constants.CERTIFICATENOTVALIDORTAMPERED;
 	}
-	
+
 	/*
 	 * S2
 	 */
@@ -195,7 +193,7 @@ public class Service {
 	{
 		Path path = Paths.get(Constants.CERTIFICATESFILEPATH);
 		try {
-			return java.nio.file.Files.readAllLines(path);		
+			return java.nio.file.Files.readAllLines(path);
 		} catch (IOException e) {
 			return null;
 		}

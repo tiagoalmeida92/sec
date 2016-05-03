@@ -86,9 +86,9 @@ public class Security {
         return null;
     }
 
-    public static String ByteToHex(final byte[] hash) {
+    public static String ByteToHex(final byte[] byteArr) {
         Formatter formatter = new Formatter();
-        for (byte b : hash) {
+        for (byte b : byteArr) {
             formatter.format("%02x", b);
         }
         String result = formatter.toString();
