@@ -16,14 +16,18 @@ public class MultiThread implements Runnable{
 	private boolean isStopped = false;
 	private Thread runningThread = null;
 	private Worker worker = null;
+	private int _nReplicas;
+	private int _nFaults;
 	
 	public MultiThread()
 	{	
 	}
 	
-	public MultiThread(int port)
+	public MultiThread(int port, int nReplicas, int nFaults)
 	{
 		serverPort = port;
+		_nReplicas = nReplicas;
+		_nFaults = nFaults;
 	}
 	
 	public void run(){
@@ -44,7 +48,7 @@ public class MultiThread implements Runnable{
                 throw new RuntimeException(
                     "Error accepting client connection", e);
             }
-            worker = new Worker(clientSocket);
+            worker = new Worker(clientSocket, _nReplicas, _nFaults);
             new Thread(
                     worker
                 ).start();

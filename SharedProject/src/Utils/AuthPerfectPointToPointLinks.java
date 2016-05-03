@@ -1,13 +1,18 @@
 package Utils;
 
-public abstract class AuthPerfectPointToPointLinks {
+import java.net.Socket;
+
+public class AuthPerfectPointToPointLinks {
 	
-	public void Send(String port, String m)
+	public void Send(int port, byte[] m)
 	{
 		
 	}
 	
-	public abstract void Deliver(String port, String m);
+	public void Deliver(Socket port, byte[] m)
+	{
+		
+	}
 	
 	public void Init()
 	{

@@ -5,13 +5,19 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import Utils.OneWriteNReadByzantineRegularRegister;
+
 public class Worker implements Runnable {
 
-	private Socket connection = null;
+	private Socket _connection = null;
+	private int _nReplicas;
+	private int _nFaults;
 	
-	public Worker(Socket connection)
+	public Worker(Socket connection, int nReplicas, int nFaults)
 	{
-		this.connection = connection;
+		_connection = connection;
+		_nReplicas = nReplicas;
+		_nFaults = nFaults;
 	}
 	
 	@Override
@@ -24,32 +30,33 @@ public class Worker implements Runnable {
 			PublicKey publicK;
 			String method,id;
 			X509Certificate cert;
-			inputStream = new ObjectInputStream(connection.getInputStream());
-			outputStream = new ObjectOutputStream(connection.getOutputStream());
+			inputStream = new ObjectInputStream(_connection.getInputStream());
+			outputStream = new ObjectOutputStream(_connection.getOutputStream());
 			method = (String) inputStream.readObject();
 			
 			switch(method)
 			{
-				case "put_k": 
-					data = (byte[]) inputStream.readObject();
-					signature = (byte[]) inputStream.readObject();
-					publicK = (PublicKey) inputStream.readObject();
-					id = Service.putK(data,signature,publicK);
-					outputStream.writeObject(id);
-					Service.filesGarbageCollection();
-					break;
-					
-				case "put_h":
-					data = (byte[]) inputStream.readObject();
-					id = Service.putH(data);
-					outputStream.writeObject(id);
-					break;
-				
-				case "get":
-					id = (String) inputStream.readObject();
-					data = Service.get(id);
-					outputStream.writeObject(data);
-					break;
+//				case "put_k": 	
+//										
+//					data = (byte[]) inputStream.readObject();
+//					signature = (byte[]) inputStream.readObject();
+//					publicK = (PublicKey) inputStream.readObject();
+//					id = Service.putK(data,signature,publicK);
+//					outputStream.writeObject(id);
+//					Service.filesGarbageCollection();
+//					break;
+//					
+//				case "put_h":
+//					data = (byte[]) inputStream.readObject();
+//					id = Service.putH(data);
+//					outputStream.writeObject(id);
+//					break;
+//				
+//				case "get":
+//					id = (String) inputStream.readObject();
+//					data = Service.get(id);
+//					outputStream.writeObject(data);
+//					break;
 				case "storePubKey":
 					cert = (X509Certificate) inputStream.readObject();
 					String result = Service.storePubKey(cert);
@@ -62,6 +69,12 @@ public class Worker implements Runnable {
 				default: 
 					break;
 			}
+			
+			data = (byte[]) inputStream.readObject();
+			OneWriteNReadByzantineRegularRegister on = 
+					new OneWriteNReadByzantineRegularRegister
+						(_nReplicas, _nFaults);
+			on.Deliver(_connection, data);
 			
 		} catch (IOException | ClassNotFoundException e) {
 			

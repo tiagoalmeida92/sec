@@ -54,6 +54,13 @@ public class Constants {
 	//Freshness - Counter replay attacks
 	public static final long FRESHNESSTIMESTAMP = 5000;
 
-	
+	//BYZANTINE METHOD TYPE
+	public static final String ACKTYPE = "put_k_ack";
+	public static final String WRITETYPE = "put_k";
+	public static final String READTYPE = "get";
+	public static final String VALUETYPE = "get_valuetype";
+	public static final String ADAPTED_ACKTYPE = "put_h_ack";
+	public static final String ADAPTED_WRITETYPE = "put_h";
+	public static final String DELIMITER = ",";
 	
 }

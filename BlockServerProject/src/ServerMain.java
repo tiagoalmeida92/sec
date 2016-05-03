@@ -22,15 +22,19 @@ public class ServerMain {
 		System.out.println("Starting Block Servers...");
 		System.out.println("How many Block Server replicas?");
 		int nReplicas = new Scanner(System.in).nextInt();
+		System.out.println("How many faults?");
+		int nFaults = new Scanner(System.in).nextInt();
 		ArrayList<BlockServer> replicas = new ArrayList<BlockServer>();
 		for( int i = 0; i<nReplicas; ++i){
 			System.out.println("Starting Block Server... Port: "+ (Constants.PORT+i));
-			MultiThread server = new MultiThread(Constants.PORT+i);
+			MultiThread server = new MultiThread(Constants.PORT+i,
+					nReplicas , nFaults);
 			Thread t = new Thread(server);
 			BlockServer bServer = new BlockServer(server, t);
 			replicas.add(bServer);
 			t.start();			
 		}
+		
 		for(int i = 0; i< nReplicas; ++i)
 		{
 			BlockServer bServer = replicas.get(i);
