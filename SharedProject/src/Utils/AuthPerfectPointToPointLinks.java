@@ -4,7 +4,7 @@ import java.net.Socket;
 
 public class AuthPerfectPointToPointLinks {
 	
-	public void Send(int port, byte[] m)
+	public void Send(Socket port, byte[] m)
 	{
 		
 	}

@@ -41,11 +41,21 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		switch(message[0])
 		{
 			case Constants.WRITETYPE:
-				DeliverWrite(connection, Integer.valueOf(message[1]),message[2])
+				/*TODO DeliverWrite(connection, Integer.valueOf(message[1]), message[2],
+						message[3], (byte[] data, byte[] signature, PublicKey pk) 
+								-> Service.putK(data, signature, pk));*/
 				break;
 			case Constants.ADAPTED_WRITETYPE:
-				break;	
+				//TODO DeliverAdaptedWrite(connection);
+				break;
 			case Constants.READTYPE:
+				//TODO DeliverRead()
+				break;
+			case Constants.ACKTYPE:
+				break;
+			case Constants.ADAPTED_ACKTYPE:
+				break;	
+			case Constants.VALUETYPE:
 				break;
 			default:
 				break;
@@ -60,9 +70,8 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 				Constants.DELIMITER + _wts + 
 				Constants.DELIMITER + Utils.byteToHex(v) +
 				Constants.DELIMITER;
-		
 		//TODO ??qual assinatura??
-		String signature = ""TODO;
+		String signature = "";//TODO
 		m = m+signature;
 		
 		//TODO filtrar o write?
@@ -70,13 +79,12 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		// f+1 Sends?? (para Hashblock puth?)
 		for(int port : ports)
 		{
-			Send(port, m.getBytes());
+			//TODO Send(port, m.getBytes());
 		}		
 	}
 	
 	//Resposta BS com response ao PUTS ou PUTH
-	private void DeliverWrite(int port, int ts, String v, String signature,
-			String response)
+	private void DeliverWrite(int port, int ts, String v, String signature)
 	{
 		if(ts > _ts)
 		{
@@ -84,12 +92,13 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 			_val = v;
 			_signature = signature;
 			//CHAMAR SERVICE.PUTS?
-			String m = Constants.ACKTYPE +
+			//TODO Service.puts();
+			/*TODO String m = Constants.ACKTYPE +
 					Constants.DELIMITER + ts +
-					Constants.DELIMITER + response;
+					Constants.DELIMITER + response;*/
 			//como é só 1 write não é preciso fazer ACK sempre
 			//pode estar dentro da condição
-			Send(port, m.getBytes());
+			//TODO Send(port, m.getBytes());
 		}
 	}
 	
@@ -105,27 +114,28 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 	}
 	
 	//(2_Read)
-	private void DeliverRead(int port, int r, int ts, String v, String signature)
+	private void DeliverRead(Socket connection, int r, int ts, String v, String signature)
 	{
 		String m = Constants.VALUETYPE + Constants.DELIMITER +
 				r + Constants.DELIMITER + ts + Constants.DELIMITER + 
 				v + Constants.DELIMITER + signature;
-		Send(port, m.getBytes());
+		//TODO Send(connection., m.getBytes());
 	}
 	
-	private String DeliverValue(int port, int r, int ts, String v, String signature)
-	{
-		if(VerifySignature(signature))
-		{
-			_readList.put(port, ts + Constants.DELIMITER + v);
-			if(_readList.size() > _nProcessesToTolerateFaults)
-			{
-				v = HighestHashMapTs(_readList);
-				_readList = new HashMap<Integer,String>();
-				return v;
-			}
-		}
-	}
+	//TODO method
+//	private String DeliverValue(int port, int r, int ts, String v, String signature)
+//	{
+//		if(VerifySignature(signature))
+//		{
+//			_readList.put(port, ts + Constants.DELIMITER + v);
+//			if(_readList.size() > _nProcessesToTolerateFaults)
+//			{
+//				v = HighestHashMapTs(_readList);
+//				_readList = new HashMap<Integer,String>();
+//				return v;
+//			}
+//		}
+//	}
 	
 	private String HighestHashMapTs(HashMap<Integer, String> readList) {
 		int localHighestTs = 0;
@@ -157,7 +167,7 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 			String m = Constants.READTYPE + Constants.DELIMITER + 
 					_rid + Constants.DELIMITER + id;
 			
-			Send(port, m.getBytes());
+			//TODO Send(port, m.getBytes());
 		}
 	}
 }

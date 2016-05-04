@@ -1,9 +1,3 @@
-import java.awt.List;
-import java.util.ArrayList;
-import java.util.Scanner;
-
-import Utils.Constants;
-
 public class ServerMain {
 	
 	public static class BlockServer{
@@ -19,37 +13,26 @@ public class ServerMain {
 	
 	public static void main(String[] args)
 	{
-		System.out.println("Starting Block Servers...");
-		System.out.println("How many Block Server replicas?");
-		int nReplicas = new Scanner(System.in).nextInt();
-		System.out.println("How many faults?");
-		int nFaults = new Scanner(System.in).nextInt();
-		ArrayList<BlockServer> replicas = new ArrayList<BlockServer>();
-		for( int i = 0; i<nReplicas; ++i){
-			System.out.println("Starting Block Server... Port: "+ (Constants.PORT+i));
-			MultiThread server = new MultiThread(Constants.PORT+i,
-					nReplicas , nFaults);
-			Thread t = new Thread(server);
-			BlockServer bServer = new BlockServer(server, t);
-			replicas.add(bServer);
-			t.start();			
-		}
+		int port = Integer.valueOf(args[0]);
+		int nReplicas = Integer.valueOf(args[1]);
+		int nFaults = Integer.valueOf(args[2]);
+
+		System.out.println("Starting Block Server... Port: "+ (port));
+		MultiThread server = new MultiThread(port, nReplicas , nFaults);
+		Thread t = new Thread(server);
+		t.start();			
 		
-		for(int i = 0; i< nReplicas; ++i)
-		{
-			BlockServer bServer = replicas.get(i);
-			Thread t = bServer._t;
-			try {
-				t.join();
-				Thread.sleep(20 * 1000);
-			} catch (InterruptedException e1) {
-				
-			}
-			finally{
-				System.out.println("Stopping Block Server");
-				bServer._server.stop();
-			}
+		try {
+			t.join();
+			Thread.sleep(20 * 1000);
+		} catch (InterruptedException e1) {
+			
 		}
+		finally{
+			System.out.println("Stopping Block Server");
+			server.stop();
+		}
+
 	}
 	
 
