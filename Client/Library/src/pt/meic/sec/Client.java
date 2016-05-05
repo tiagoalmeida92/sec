@@ -75,59 +75,6 @@ public class Client {
         }
     }
 
-    private void createSelfCertificate() throws NoSuchProviderException, NoSuchAlgorithmException, IOException, InvalidKeyException, CertificateException, SignatureException {
-
-        CertAndKeyGen keypair = new CertAndKeyGen("RSA", "SHA1WithRSA", null);
-
-        String username = System.getProperty("user.name");
-        X500Name x500Name = new X500Name(username, "Tecnico", "SEC", "Porto Salvo", "Oeiras", "Portugal");
-
-        keypair.generate(1024);
-
-        certificate = keypair.getSelfCertificate(x500Name, 60 * 60 * 24 * 365);
-        privateKey = keypair.getPrivateKey();
-    }
-
-    public void init(X509Certificate certificate) throws DependabilityException {
-        try {
-
-            String result = registerCertificate(certificate);
-            if (result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)) {
-                throw new DependabilityException(Constants.CERTIFICATENOTVALID);
-            } else {
-                if (result.equals(Constants.CERTIFICATEALREADYREGISTERED)) {
-                    publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
-                } else {
-                    if (result.equals(Constants.SUCCESS)) {
-                        PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
-                        publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
-                        if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
-                            throw new DependabilityException(Constants.CERTIFICATETAMPERED);
-                        }
-                    }
-                }
-            }
-
-        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException
-                | SignatureException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String registerCertificate(X509Certificate certificate) {
-        try {
-            connectToServer();
-            socketOutputStream.writeObject(STORE_PUBLIC_KEY);
-            socketOutputStream.writeObject(certificate);
-            String result = (String) socketInputStream.readObject();
-            return result;
-        } catch (IOException e) {
-            return null;
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-    }
-
     public void write(int position, int size, byte[] contents) throws DependabilityException {
         try {
             if (publicKeyBlockId == null) {
@@ -239,13 +186,28 @@ public class Client {
     private PublicKeyBlock getPublicKeyBlock(String publicKeyBlockId) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, DependabilityException, SignatureException, InvalidKeyException {
         byte[] pkBlockBytes = readBlock(publicKeyBlockId);
         if (pkBlockBytes == null) {
-            throw new DependabilityException(Constants.TAMPEREDAKEYEXCEPTIONMESSAGE);
+            throw new DependabilityException(Constants.TAMPERED_KEY_MESSAGE);
         }
         PublicKeyBlock publicKeyBlock = PublicKeyBlock.createFromBytes(pkBlockBytes);
-
+        if(!publicKeyBlock.verifySignature(publicKeyBlockId)){
+            throw new DependabilityException(Constants.TAMPERED_SIGNATURE_MESSAGE);
+        }
         return publicKeyBlock;
     }
 
+    private String registerCertificate(X509Certificate certificate) {
+        try {
+            connectToServer();
+            socketOutputStream.writeObject(STORE_PUBLIC_KEY);
+            socketOutputStream.writeObject(certificate);
+            String result = (String) socketInputStream.readObject();
+            return result;
+        } catch (IOException e) {
+            return null;
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
 
     public List<X509Certificate> list() throws DependabilityException {
         try {
@@ -281,4 +243,44 @@ public class Client {
         }
 
     }
+
+    private void createSelfCertificate() throws NoSuchProviderException, NoSuchAlgorithmException, IOException, InvalidKeyException, CertificateException, SignatureException {
+
+        CertAndKeyGen keypair = new CertAndKeyGen("RSA", "SHA1WithRSA", null);
+
+        String username = System.getProperty("user.name");
+        X500Name x500Name = new X500Name(username, "Tecnico", "SEC", "Porto Salvo", "Oeiras", "Portugal");
+
+        keypair.generate(1024);
+
+        certificate = keypair.getSelfCertificate(x500Name, 60 * 60 * 24 * 365);
+        privateKey = keypair.getPrivateKey();
+    }
+
+    public void init(X509Certificate certificate) throws DependabilityException {
+        try {
+
+            String result = registerCertificate(certificate);
+            if (result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)) {
+                throw new DependabilityException(Constants.CERTIFICATENOTVALID);
+            } else {
+                if (result.equals(Constants.CERTIFICATEALREADYREGISTERED)) {
+                    publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
+                } else {
+                    if (result.equals(Constants.SUCCESS)) {
+                        PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
+                        publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
+                        if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
+                            throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+                        }
+                    }
+                }
+            }
+
+        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException
+                | SignatureException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

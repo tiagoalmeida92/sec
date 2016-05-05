@@ -50,16 +50,20 @@ public class PublicKeyBlock {
         return bytes;
     }
 
+    public boolean verifySignature(String publicKeyId) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        if(!SecurityUtils.verifyHash(publicKey.getEncoded(), publicKeyId) ||
+                !SecurityUtils.Verify(Arrays.copyOfRange(bytes, Constants.SIGNATURE_SIZE, bytes.length), signature, publicKey)){
+            return false;
+        }
+        return true;
+    }
+
     public static PublicKeyBlock createFromBytes(byte[] pkBlockBytes) throws DependabilityException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         byte[] signature = Arrays.copyOfRange(pkBlockBytes, 0, Constants.SIGNATURE_SIZE);
 
         int publicKeyEndPos = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
         byte[] publicKeyBytes = Arrays.copyOfRange(pkBlockBytes, Constants.SIGNATURE_SIZE, publicKeyEndPos);
         PublicKey key = SecurityUtils.getKey(publicKeyBytes);
-
-        if(SecurityUtils.Verify(Arrays.copyOfRange(pkBlockBytes, Constants.SIGNATURE_SIZE, pkBlockBytes.length), signature, key)){
-            throw new DependabilityException(Constants.TAMPERED_SIGNATURE_MESSAGE);
-        }
 
         byte[] timestampBytes = Arrays.copyOfRange(pkBlockBytes, publicKeyEndPos, publicKeyEndPos + Constants.TIME_STAMP_SIZE);
         int timestamp = Utils.bytesToInt(timestampBytes);

@@ -28,7 +28,7 @@ public class Constants {
 	public static final String CERTIFICATENOTVALID = "Certificate or is not valid or was revogated.";
 	public static final String CERTIFICATETAMPERED = "An attacker tampered the received certificate.";
 	public static final String AVAILABILITYWASCOMPROMISED = "Due to attacks or faults the availability of the system was compromised";
-	public static final String TAMPEREDAKEYEXCEPTIONMESSAGE = "An attacker tampered the identifier of a block";
+	public static final String TAMPERED_KEY_MESSAGE = "An attacker tampered the identifier of a block";
 	public static final String TAMPERED_SIGNATURE_MESSAGE = "An attacker tampered the signature of a block";
 	public static final String TAMPEREDWITHCONTENTBLOCKEXCEPTIONMESSAGE = "An attacker tampered the received content block";
 
