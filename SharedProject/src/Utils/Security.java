@@ -30,6 +30,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import sun.security.x509.X509CertImpl;
 
 /*
@@ -375,4 +380,51 @@ public class Security {
                 (PKIXCertPathBuilderResult) builder.build(pkixParams);
         return result;
     }
+    
+    public static byte[] generateHMac(byte[] secretKey, byte[] data, String algorithm) {
+
+        SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
+
+        try {
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(signingKey);
+
+            return mac.doFinal(data);
+        }
+        catch(InvalidKeyException e) {
+            throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");
+        }
+        catch(NoSuchAlgorithmException e) {
+            throw new IllegalStateException("the system doesn't support algorithm " + algorithm, e);
+        }
+    }
+    
+    public static boolean verifyHMac(byte[] secretKey, byte[] data, byte[] dataToVerify, String algorithm)
+    {
+    	SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
+    	try {
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(signingKey);
+            mac.doFinal(data);
+            return Utils.equals(data,dataToVerify);
+        }
+        catch(InvalidKeyException e) {
+            throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");
+        }
+        catch(NoSuchAlgorithmException e) {
+            throw new IllegalStateException("the system doesn't support algorithm " + algorithm, e);
+        }
+    }
+
+	public static byte[] GenerateSecretKey() {
+		KeyGenerator keyGen;
+		try {
+			keyGen = KeyGenerator.getInstance("AES");
+			keyGen.init(128);
+			SecretKey secretKey = keyGen.generateKey();
+			return secretKey.getEncoded();
+		} catch (NoSuchAlgorithmException e) {
+			return null;
+		}
+	}
 }

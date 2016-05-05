@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import Utils.AuthPerfectPointToPointLinks;
 import Utils.Constants;
 import Utils.OneWriteNReadByzantineRegularRegister;
 import Utils.Security;
@@ -40,15 +41,12 @@ public class Worker implements Runnable {
 			switch(method)
 			{
 				case "put_k": 	
-										
-					data = (byte[]) inputStream.readObject();
-					signature = (byte[]) inputStream.readObject();
-					publicK = (PublicKey) inputStream.readObject();
-					id = Service.BizantinePutK(data,signature,publicK);
-					String[] paramsPutK = id.split(Constants.DELIMITER);
-					outputStream.writeObject(paramsPutK[0]);
-					outputStream.writeObject(paramsPutK[1]);
-					outputStream.writeObject(paramsPutK[2]);
+					//verify			
+					byte[] m = 
+							AuthPerfectPointToPointLinks.Deliver(_connection);
+					id = Service.BizantinePutK(m);
+					//authenticate
+					AuthPerfectPointToPointLinks.Send(_connection, id.getBytes());
 					Service.filesGarbageCollection();
 					break;
 					
