@@ -132,21 +132,6 @@ public class Files {
 		}
 	}
 	
-	public static byte[] CreateAndOrGetFileContent(String path, byte[] data)
-	{
-		File file = new File(path);
-		byte[] myByteArray = new byte[(int) file.length()];
-		
-		BufferedInputStream reader = null;
-		try {
-			reader = new BufferedInputStream(new FileInputStream(file));
-			reader.read(myByteArray, 0, myByteArray.length);
-			reader.close();			
-			return myByteArray;
-		} catch (IOException e) {
-			Files.WriteFile(path, data);
-			return myByteArray;
-		}
-	}
+
 	
 }

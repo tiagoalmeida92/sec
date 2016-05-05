@@ -10,8 +10,7 @@ public class AuthPerfectPointToPointLinks {
 	public static void Send(Socket con, byte[] m) throws IOException
 	{
 		byte[] secretKey = 
-				Files.CreateAndOrGetFileContent(Constants.SECRETKEYFILE,
-						Security.GenerateSecretKey());
+				Security.CreateAndOrGetSecretKeyFile(Constants.SECRETKEYFILE);
 		ObjectOutputStream outputStream = 
 				new ObjectOutputStream(con.getOutputStream());
 		byte[] auth = Security.generateHMac(secretKey, m, "HmacSHA256");
@@ -22,8 +21,7 @@ public class AuthPerfectPointToPointLinks {
 	public static byte[] Deliver(Socket con) throws IOException, ClassNotFoundException
 	{
 		byte[] secretKey = 
-				Files.CreateAndOrGetFileContent(Constants.SECRETKEYFILE,
-						Security.GenerateSecretKey());
+				Security.CreateAndOrGetSecretKeyFile(Constants.SECRETKEYFILE);
 		ObjectInputStream inputStream =
 				new ObjectInputStream(con.getInputStream());
 		byte[] m = (byte[]) inputStream.readObject();
