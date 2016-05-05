@@ -1,11 +1,12 @@
 package Utils;
 
-import java.math.BigInteger;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.security.PublicKey;
 
 public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPointLinks {
 
@@ -41,9 +42,8 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		switch(message[0])
 		{
 			case Constants.WRITETYPE:
-				/*TODO DeliverWrite(connection, Integer.valueOf(message[1]), message[2],
-						message[3], (byte[] data, byte[] signature, PublicKey pk) 
-								-> Service.putK(data, signature, pk));*/
+				DeliverWrite(connection, Integer.valueOf(message[1]), message[2],
+						message[3]);
 				break;
 			case Constants.ADAPTED_WRITETYPE:
 				//TODO DeliverAdaptedWrite(connection);
@@ -84,7 +84,7 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 	}
 	
 	//Resposta BS com response ao PUTS ou PUTH
-	private void DeliverWrite(int port, int ts, String v, String signature)
+	private void DeliverWrite(Socket connection, int ts, String v, String signature)
 	{
 		if(ts > _ts)
 		{
@@ -92,13 +92,14 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 			_val = v;
 			_signature = signature;
 			//CHAMAR SERVICE.PUTS?
-			//TODO Service.puts();
-			/*TODO String m = Constants.ACKTYPE +
+			String response = Service.putK();
+			String m = Constants.ACKTYPE +
 					Constants.DELIMITER + ts +
-					Constants.DELIMITER + response;*/
+					Constants.DELIMITER + response;
+			
 			//como é só 1 write não é preciso fazer ACK sempre
 			//pode estar dentro da condição
-			//TODO Send(port, m.getBytes());
+			Send(connection, m.getBytes());
 		}
 	}
 	

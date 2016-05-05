@@ -29,7 +29,7 @@ public class ServerMain {
 			
 		}
 		finally{
-			System.out.println("Stopping Block Server");
+			System.out.println("Stopping Block Server... Port: "+ (port));
 			server.stop();
 		}
 

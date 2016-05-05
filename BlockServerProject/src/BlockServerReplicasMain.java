@@ -10,64 +10,50 @@ public class BlockServerReplicasMain {
 	public static void main(String[] args)
 	{
 		System.out.println("Starting Block Servers...");
-		String port = args[0];
+		int port = Integer.valueOf(args[0]);
 		String nFaults = args[1];
-		int nReplicas = 3*Integer.valueOf(args[1]);
+		int nReplicas = 3 * Integer.valueOf(args[1]) + 1;
 		ArrayList<Process> processes = new ArrayList<Process>();
+		 
+		try
+		{
+			for(int i = 0; i < nReplicas; ++i)
+			{
+				processes.add(executeProcess(ServerMain.class,
+						String.valueOf(port+i), 
+						String.valueOf(nReplicas), nFaults));	
+			}
+		} catch (IOException e) {
+			System.out.println("Error running BS: " + e.getMessage());
+			return;
+		}
 		
-		ArrayList<File> allProjectFiles = new ArrayList<File>();
-		ArrayList<File> sharedProjectFiles = new ArrayList<File>();
-		ListFiles(new File("").getAbsolutePath(),allProjectFiles);
-		ListFiles(new File("").getAbsolutePath()+"\\..\\SharedProject",sharedProjectFiles);
-		allProjectFiles.addAll(sharedProjectFiles);
-		String compileServerPath = null;
-		String constantsSharedPath = null;
-		String runServerPath = null;	
-		for(File f : allProjectFiles)
+		boolean b;
+		do{
+			System.out.println("Exit all subprocesses? <True or False>");
+			b = new Scanner(System.in).nextBoolean();
+		}while(!b);
+		for(Process process : processes)
 		{
-			if(f.getName().contains("ServerMain.java"))
-				compileServerPath = f.getAbsolutePath();
-			if(f.getName().contains("Constants.java"))
-				constantsSharedPath = f.getAbsolutePath();
-			if(f.getName().contains("ServerMain.class"))
-				runServerPath = f.getAbsolutePath();
+			process.destroy();
 		}
-		if(compileServerPath != null && runServerPath != null)
-		{
-			try
-			{
-				pipeOutput(new ProcessBuilder("javac -cp \""+ constantsSharedPath.substring(0, 
-						constantsSharedPath.indexOf("Constants.java"))+"*.jar" +"\" "+
-						constantsSharedPath.substring(0, 
-								constantsSharedPath.indexOf("Constants.java"))+"*.java").start());
-				pipeOutput(new ProcessBuilder("javac ",
-						compileServerPath.substring(0, 
-								compileServerPath.indexOf("ServerMain.java"))+"*.java").start());
-				for(int i = 0; i < nReplicas; ++i)
-				{
-					//serverProcessPath.substring(0,serverProcessPath.indexOf(".java")
-					ProcessBuilder pb = new ProcessBuilder("java", "-cp",
-							runServerPath.substring(0,runServerPath.indexOf(".class"))
-							+" "+(port+i)+" "+String.valueOf(nReplicas)+" "+nFaults);
-					Process process = null;
-					process = pb.start();
-					pipeOutput(process);
-				}
-			} catch (IOException e) {
-				System.out.println("Error running BS: " + e.getMessage());
-				return;
-			}
-			
-			boolean b;
-			do{
-				System.out.println("Exit all subprocesses? <True or False>");
-				b = new Scanner(System.in).nextBoolean();
-			}while(!b);
-			for(Process process : processes)
-			{
-				process.destroy();
-			}
-		}
+	}
+	
+	private static Process executeProcess(Class klass, 
+			String port, String nReplicas, String nFaults) throws IOException{
+		String javaHome = System.getProperty("java.home");
+        String javaBin = javaHome +
+                File.separator + "bin" +
+                File.separator + "java";
+        String classpath = System.getProperty("java.class.path");
+        String className = klass.getCanonicalName();
+
+        ProcessBuilder builder = new ProcessBuilder(
+                javaBin, "-cp", classpath, className,
+            			port, nReplicas, nFaults);
+        Process process = builder.start();
+        pipeOutput(process);
+        return process;
 	}
 	
 	private static void pipeOutput(Process process) {
