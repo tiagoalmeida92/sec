@@ -5,7 +5,9 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import Utils.Constants;
 import Utils.OneWriteNReadByzantineRegularRegister;
+import Utils.Security;
 
 public class Worker implements Runnable {
 
@@ -27,6 +29,7 @@ public class Worker implements Runnable {
 			ObjectInputStream inputStream;
 			ObjectOutputStream outputStream;
 			byte[] data,signature;
+			String dataStr;
 			PublicKey publicK;
 			String method,id;
 			X509Certificate cert;
@@ -36,45 +39,48 @@ public class Worker implements Runnable {
 			
 			switch(method)
 			{
-//				case "put_k": 	
-//										
-//					data = (byte[]) inputStream.readObject();
-//					signature = (byte[]) inputStream.readObject();
-//					publicK = (PublicKey) inputStream.readObject();
-//					id = Service.putK(data,signature,publicK);
-//					outputStream.writeObject(id);
-//					Service.filesGarbageCollection();
-//					break;
-//					
-//				case "put_h":
-//					data = (byte[]) inputStream.readObject();
-//					id = Service.putH(data);
-//					outputStream.writeObject(id);
-//					break;
-//				
-//				case "get":
-//					id = (String) inputStream.readObject();
-//					data = Service.get(id);
-//					outputStream.writeObject(data);
-//					break;
-				case "storePubKey":
-					cert = (X509Certificate) inputStream.readObject();
-					String result = Service.storePubKey(cert);
-					outputStream.writeObject(result);
-					outputStream.flush();
+				case "put_k": 	
+										
+					data = (byte[]) inputStream.readObject();
+					signature = (byte[]) inputStream.readObject();
+					publicK = (PublicKey) inputStream.readObject();
+					id = Service.BizantinePutK(data,signature,publicK);
+					String[] paramsPutK = id.split(Constants.DELIMITER);
+					outputStream.writeObject(paramsPutK[0]);
+					outputStream.writeObject(paramsPutK[1]);
+					outputStream.writeObject(paramsPutK[2]);
+					Service.filesGarbageCollection();
 					break;
-				case "readPubKeys":
-					outputStream.writeObject(Service.readPubKeys());
+					
+				case "put_h":
+					data = (byte[]) inputStream.readObject();
+					id = Service.putH(data);
+					String[] paramsPutH = id.split(Constants.DELIMITER);
+					outputStream.writeObject(paramsPutH[0]);
+					outputStream.writeObject(paramsPutH[1]);
 					break;
+				
+				case "get":
+					id = (String) inputStream.readObject();
+					int rid = inputStream.readInt();
+					String[] paramsGet = Service.BizantineGet(id, rid)
+											.split(Constants.DELIMITER);
+					outputStream.writeObject(paramsGet[0]);
+					outputStream.writeObject(paramsGet[1]);
+					outputStream.writeObject(Security.HexStringToByteArray(paramsGet[2]));
+					break;
+//				case "storePubKey":
+//					cert = (X509Certificate) inputStream.readObject();
+//					String result = Service.storePubKey(cert);
+//					outputStream.writeObject(result);
+//					outputStream.flush();
+//					break;
+//				case "readPubKeys":
+//					outputStream.writeObject(Service.readPubKeys());
+//					break;
 				default: 
 					break;
 			}
-			
-			data = (byte[]) inputStream.readObject();
-			OneWriteNReadByzantineRegularRegister on = 
-					new OneWriteNReadByzantineRegularRegister
-						(_nReplicas, _nFaults);
-			on.Deliver(_connection, data);
 			
 		} catch (IOException | ClassNotFoundException e) {
 			

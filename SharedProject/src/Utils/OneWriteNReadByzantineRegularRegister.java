@@ -11,8 +11,8 @@ import java.security.PublicKey;
 public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPointLinks {
 
 	private int _ts;
-	private String _val;
-	private String _signature;
+	private byte[] _val;
+	private byte[] _signature;
 	private int _wts;
 	private HashMap<Integer, Boolean> _ackList;
 	private int _rid;
@@ -42,8 +42,10 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		switch(message[0])
 		{
 			case Constants.WRITETYPE:
-				DeliverWrite(connection, Integer.valueOf(message[1]), message[2],
-						message[3]);
+				DeliverWrite(connection, 
+						Integer.valueOf(message[1]), 
+						Security.HexStringToByteArray(message[2]),
+						Security.HexStringToByteArray(message[3]);
 				break;
 			case Constants.ADAPTED_WRITETYPE:
 				//TODO DeliverAdaptedWrite(connection);
@@ -84,7 +86,8 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 	}
 	
 	//Resposta BS com response ao PUTS ou PUTH
-	private void DeliverWrite(Socket connection, int ts, String v, String signature)
+	private void DeliverWrite(Socket connection,
+			int ts, byte[] data, byte[] signature, PublicKey pKey)
 	{
 		if(ts > _ts)
 		{
@@ -120,7 +123,7 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		String m = Constants.VALUETYPE + Constants.DELIMITER +
 				r + Constants.DELIMITER + ts + Constants.DELIMITER + 
 				v + Constants.DELIMITER + signature;
-		//TODO Send(connection., m.getBytes());
+		Send(connection, m.getBytes());
 	}
 	
 	//TODO method
