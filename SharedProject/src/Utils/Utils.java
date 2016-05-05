@@ -49,5 +49,26 @@ public class Utils {
         formatter.close();
         return result;
     }
-	
+
+    public static int bytesToInt(byte[] array){
+        int value = 0;
+        value |= array[0] << 24;
+        value |= array[1] << 16;
+        value |= array[2] << 8;
+        value |= array[3];
+
+
+        return value;
+    }
+
+    public static byte[] intToBytes(int value){
+        byte[] bytes = new byte[4];
+
+        bytes[0] = (byte) (value >>> 24);
+        bytes[1] = (byte) (value >>> 16);
+        bytes[2] = (byte) (value >>> 8);
+        bytes[3] = (byte) (value);
+
+        return bytes;
+    }
 }

@@ -30,8 +30,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import sun.security.x509.X509CertImpl;
 
 /*
@@ -183,25 +181,6 @@ public class Security {
         }
 
         return null;
-    }
-
-    public static boolean VerifyFreshness(String timestamp) {
-        DateTimeZone zone = DateTimeZone.forID("Europe/Lisbon");
-        DateTime currentDateTime = new DateTime(zone);
-
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-        Date dateToVerify = null;
-        try {
-            dateToVerify = format.parse(timestamp);
-        } catch (ParseException e) {
-            return false;
-        }
-        long diffInMillis = currentDateTime.getMillis() - dateToVerify.getTime();
-        if (diffInMillis > Constants.FRESHNESSTIMESTAMP) {
-            return false;
-        }
-        return true;
     }
 
     private static Set<X509Certificate> GetCACertificates(String... paths) throws CertificateException, FileNotFoundException {
