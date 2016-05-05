@@ -28,6 +28,7 @@ public class MultiThread implements Runnable{
 		serverPort = port;
 		_nReplicas = nReplicas;
 		_nFaults = nFaults;
+		Constants.PORT = port;
 	}
 	
 	public void run(){
