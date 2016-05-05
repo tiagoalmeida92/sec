@@ -1,6 +1,8 @@
 package Utils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -416,7 +418,8 @@ public class Security {
         }
     }
 
-	public static byte[] GenerateSecretKey() {
+	public static byte[] GenerateSecretKey() 
+	{	
 		KeyGenerator keyGen;
 		try {
 			keyGen = KeyGenerator.getInstance("AES");
@@ -427,4 +430,24 @@ public class Security {
 			return null;
 		}
 	}
+	
+	public static byte[] CreateAndOrGetSecretKeyFile(String path)
+	{
+		File file = new File(path);
+		byte[] myByteArray = new byte[(int) file.length()];
+		
+		BufferedInputStream reader = null;
+		try {
+			reader = new BufferedInputStream(new FileInputStream(file));
+			reader.read(myByteArray, 0, myByteArray.length);
+			reader.close();			
+			return myByteArray;
+		} catch (IOException e) {
+			byte[] data = Security.GenerateSecretKey();
+			Files.WriteFile(path, data);
+			return myByteArray;
+		}
+	}
+	
+	
 }

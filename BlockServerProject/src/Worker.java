@@ -27,45 +27,40 @@ public class Worker implements Runnable {
 	public void run() {
 		try
 		{
-			ObjectInputStream inputStream;
-			ObjectOutputStream outputStream;
 			byte[] data,signature;
-			String dataStr;
 			PublicKey publicK;
 			String method,id;
-			X509Certificate cert;
-			inputStream = new ObjectInputStream(_connection.getInputStream());
-			outputStream = new ObjectOutputStream(_connection.getOutputStream());
-			method = (String) inputStream.readObject();
+
+			//verify
+			byte[] m = 
+					AuthPerfectPointToPointLinks.Deliver(_connection);
+			String[] mSplited = new String(m).split(Constants.DELIMITER);
 			
-			switch(method)
+			switch(mSplited[0])
 			{
-				case "put_k": 	
-					//verify			
-					byte[] m = 
-							AuthPerfectPointToPointLinks.Deliver(_connection);
-					id = Service.BizantinePutK(m);
+				case Constants.WRITETYPE: 								
+					data = Security.HexStringToByteArray(mSplited[1]);
+					signature = Security.HexStringToByteArray(mSplited[2]);
+					publicK = Security.getKey(
+							Security.HexStringToByteArray(mSplited[3]));
+					id = Service.BizantinePutK(data,signature,publicK);
 					//authenticate
 					AuthPerfectPointToPointLinks.Send(_connection, id.getBytes());
 					Service.filesGarbageCollection();
 					break;
 					
-				case "put_h":
-					data = (byte[]) inputStream.readObject();
+				case Constants.ADAPTED_WRITETYPE:
+					data = Security.HexStringToByteArray(mSplited[1]);
 					id = Service.putH(data);
-					String[] paramsPutH = id.split(Constants.DELIMITER);
-					outputStream.writeObject(paramsPutH[0]);
-					outputStream.writeObject(paramsPutH[1]);
+					AuthPerfectPointToPointLinks.Send(_connection, id.getBytes());
 					break;
 				
-				case "get":
-					id = (String) inputStream.readObject();
-					int rid = inputStream.readInt();
-					String[] paramsGet = Service.BizantineGet(id, rid)
-											.split(Constants.DELIMITER);
-					outputStream.writeObject(paramsGet[0]);
-					outputStream.writeObject(paramsGet[1]);
-					outputStream.writeObject(Security.HexStringToByteArray(paramsGet[2]));
+				case Constants.READTYPE:
+					id = mSplited[1];
+					int rid = Integer.valueOf(mSplited[2]);
+					String message = Service.BizantineGet(id, rid);
+					AuthPerfectPointToPointLinks.Send(_connection, 
+							message.getBytes());
 					break;
 //				case "storePubKey":
 //					cert = (X509Certificate) inputStream.readObject();
