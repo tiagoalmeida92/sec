@@ -33,4 +33,5 @@ public class Constants {
 	public static final String TAMPEREDWITHCONTENTBLOCKEXCEPTIONMESSAGE = "An attacker tampered the received content block";
 
 
+	public static final String DELIMITER = ",";
 }

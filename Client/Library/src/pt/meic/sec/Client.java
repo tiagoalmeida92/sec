@@ -148,10 +148,12 @@ public class Client {
     }
 
     private byte[] readBlock(String id) throws IOException, ClassNotFoundException {
-        connectToServer();
-        socketOutputStream.writeObject(READ_BLOCK);
-        socketOutputStream.writeObject(id);
-        return (byte[]) socketInputStream.readObject();
+        byte[] result = byzantineRegularRegister.read(READ_BLOCK, id.getBytes());
+        return result;
+//        connectToServer();
+//        socketOutputStream.writeObject(READ_BLOCK);
+//        socketOutputStream.writeObject(id);
+//        return (byte[]) socketInputStream.readObject();
     }
 
     private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException {
