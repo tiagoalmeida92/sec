@@ -22,8 +22,7 @@ public class Client {
     private static final String STORE_PUBLIC_KEY = "storePubKey";
     private static final int INITIAL_TIMESTAMP = 0;
 
-    private final String hostname;
-    private final int portNumber;
+    private final ByzantineRegularRegister byzantineRegularRegister;
 
     private Socket socket;
     private ObjectInputStream socketInputStream;
@@ -35,15 +34,8 @@ public class Client {
     private PrivateKey privateKey;
 
 
-    public Client(String hostname, int portNumber) {
-        this.hostname = hostname;
-        this.portNumber = portNumber;
-    }
-
-    private void connectToServer() throws IOException {
-        socket = new Socket(hostname, portNumber);
-        socketOutputStream = new ObjectOutputStream(socket.getOutputStream());
-        socketInputStream = new ObjectInputStream(socket.getInputStream());
+    public Client(String[] blockServerPorts) {
+        byzantineRegularRegister = new ByzantineRegularRegister(blockServerPorts);
     }
 
     public void init() throws DependabilityException {

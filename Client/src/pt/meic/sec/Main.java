@@ -14,7 +14,8 @@ public class Main {
 
     public static void main(String[] args) {
         displayCommands();
-        client = new Client(null, 64535);
+
+        client = new Client("localhost", args);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             out.print(">");
