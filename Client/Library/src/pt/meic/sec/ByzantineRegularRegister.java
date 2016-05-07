@@ -1,14 +1,12 @@
 package pt.meic.sec;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ByzantineRegularRegister {
 
-    private final String[] _processesPorts;
+    private final List<Integer> _processesPorts;
     private final int _faults;
     private int _ts;
     private byte[] _val;
@@ -24,7 +22,7 @@ public class ByzantineRegularRegister {
     public ByzantineRegularRegister(String[] processesPorts, int faults)
     {
         _nProcessesToTolerateFaults = processesPorts.length;
-        _processesPorts = processesPorts;
+        _processesPorts = Arrays.stream(processesPorts).map(Integer::parseInt).collect(Collectors.toList());
         _faults = faults;
 
         _wts = 0;
@@ -38,23 +36,33 @@ public class ByzantineRegularRegister {
         _readList = new HashMap<>();
 
 
-        new ArrayList<Integer>().parallelStream().forEach(port -> {
-            AuthPerfectPointToPointLinks al = new AuthPerfectPointToPointLinks(port);
-            al.Send(data);
-            byte[] result = al.Deliver();
-            _readList.put(port, new String(result));
-            _wts++;
-            if(_wts > (_nProcessesToTolerateFaults + _faults) / 2){
-                String highest = HighestHashMapTs(_readList);
-                _readList.clear();
-                return highest;
+        _processesPorts.parallelStream().forEach(port -> {
+            AuthPerfectPointToPointLinks al = null;
+            try {
+                al = new AuthPerfectPointToPointLinks(port);
+                al.Send(data);
+                byte[] result = al.Deliver();
+                _readList.put(port, new String(result));
+                _wts++;
+
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
             }
+
+
         });
+        if(_wts > (_nProcessesToTolerateFaults + _faults) / 2){
+            String highest = HighestHashMapTs(_readList);
+            _readList.clear();
+            return highest.getBytes();
+        }
 
         return null;
     }
 
-
+    public byte[] write(byte[] contents) {
+        return null;
+    }
 
     private String HighestHashMapTs(HashMap<Integer, String> readList) {
         int localHighestTs = 0;
@@ -75,6 +83,7 @@ public class ByzantineRegularRegister {
 
         return localHighestVal;
     }
+
 
 
 }

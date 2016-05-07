@@ -21,6 +21,7 @@ public class Client {
     private static final String READ_PUBLIC_KEYS = "readPubKeys";
     private static final String STORE_PUBLIC_KEY = "storePubKey";
     private static final int INITIAL_TIMESTAMP = 0;
+    public static final int MAX_FAULTS = 2;
 
     private final ByzantineRegularRegister byzantineRegularRegister;
 
@@ -35,7 +36,7 @@ public class Client {
 
 
     public Client(String[] blockServerPorts) {
-        byzantineRegularRegister = new ByzantineRegularRegister(blockServerPorts);
+        byzantineRegularRegister = new ByzantineRegularRegister(blockServerPorts, MAX_FAULTS);
     }
 
     public void init() throws DependabilityException {
@@ -45,17 +46,17 @@ public class Client {
             createSelfCertificate();
 
             String result = registerCertificate(certificate);
-            if (result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)) {
-                throw new DependabilityException(Constants.CERTIFICATENOTVALID);
+            if (result == null || result.equals(Constants.CERTIFOCATE_INVALID_OR_TAMPERED)) {
+                throw new DependabilityException(Constants.CERTIFICATE_INVALID);
             } else {
-                if (result.equals(Constants.CERTIFICATEALREADYREGISTERED)) {
+                if (result.equals(Constants.CERTIFICATE_ALREADY_REGISTERED)) {
                     publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
                 } else {
                     if (result.equals(Constants.SUCCESS)) {
                         PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
                         publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
                         if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
-                            throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+                            throw new DependabilityException(Constants.CERTIFICATE_TAMPERED);
                         }
                     }
                 }
@@ -148,7 +149,7 @@ public class Client {
     }
 
     private byte[] readBlock(String id) throws IOException, ClassNotFoundException {
-        byte[] result = byzantineRegularRegister.read(READ_BLOCK, id.getBytes());
+        byte[] result = byzantineRegularRegister.read(id.getBytes());
         return result;
 //        connectToServer();
 //        socketOutputStream.writeObject(READ_BLOCK);
@@ -157,7 +158,7 @@ public class Client {
     }
 
     private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException {
-        connectToServer();
+        byzantineRegularRegister.write(contents);
         socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
         socketOutputStream.writeObject(Arrays.copyOf(contents, Constants.CBLOCKLENGTH));
         return (String) socketInputStream.readObject();
@@ -165,7 +166,7 @@ public class Client {
 
 
     private String writePublicKeyBlock(PublicKeyBlock publicKeyBlock) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, DependabilityException, SignatureException, InvalidKeyException {
-        connectToServer();
+//        connectToServer();
         socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
         byte[] pkBlockBytes = publicKeyBlock.toBytes(privateKey);
         socketOutputStream.writeObject(pkBlockBytes);
@@ -191,7 +192,7 @@ public class Client {
 
     private String registerCertificate(X509Certificate certificate) {
         try {
-            connectToServer();
+//            connectToServer();
             socketOutputStream.writeObject(STORE_PUBLIC_KEY);
             socketOutputStream.writeObject(certificate);
             String result = (String) socketInputStream.readObject();
@@ -205,7 +206,7 @@ public class Client {
 
     public List<X509Certificate> list() throws DependabilityException {
         try {
-            connectToServer();
+//            connectToServer();
             socketOutputStream.writeObject(READ_PUBLIC_KEYS);
             List<String> result = (List<String>) socketInputStream.readObject();
             if (result == null || result.size() < 2) {
@@ -255,17 +256,17 @@ public class Client {
         try {
 
             String result = registerCertificate(certificate);
-            if (result == null || result.equals(Constants.CERTIFICATENOTVALIDORTAMPERED)) {
-                throw new DependabilityException(Constants.CERTIFICATENOTVALID);
+            if (result == null || result.equals(Constants.CERTIFOCATE_INVALID_OR_TAMPERED)) {
+                throw new DependabilityException(Constants.CERTIFICATE_INVALID);
             } else {
-                if (result.equals(Constants.CERTIFICATEALREADYREGISTERED)) {
+                if (result.equals(Constants.CERTIFICATE_ALREADY_REGISTERED)) {
                     publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
                 } else {
                     if (result.equals(Constants.SUCCESS)) {
                         PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
                         publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
                         if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
-                            throw new DependabilityException(Constants.CERTIFICATETAMPERED);
+                            throw new DependabilityException(Constants.CERTIFICATE_TAMPERED);
                         }
                     }
                 }
