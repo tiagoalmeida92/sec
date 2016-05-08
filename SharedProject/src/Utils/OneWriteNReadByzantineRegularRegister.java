@@ -34,7 +34,7 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		_readList = new HashMap<Integer,String>();
 	}
 	
-	@Override
+//	@Override
 	public void Deliver(Socket connection, byte[] m) {
 		//m=[WRITE,...] ou m=[ACK,...] ou m=[READ,...] ou m=[VALUE,...]
 		String[] message = new String(m, StandardCharsets.UTF_8)
@@ -42,10 +42,10 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		switch(message[0])
 		{
 			case Constants.WRITETYPE:
-				DeliverWrite(connection, 
-						Integer.valueOf(message[1]), 
-						Security.HexStringToByteArray(message[2]),
-						Security.HexStringToByteArray(message[3]);
+//				DeliverWrite(connection,
+//						Integer.valueOf(message[1]),
+//						Security.HexStringToByteArray(message[2]),
+//						Security.HexStringToByteArray(message[3]));
 				break;
 			case Constants.ADAPTED_WRITETYPE:
 				//TODO DeliverAdaptedWrite(connection);
@@ -77,7 +77,7 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		m = m+signature;
 		
 		//TODO filtrar o write?
-		// enviar só para 1 BS?
+		// enviar sï¿½ para 1 BS?
 		// f+1 Sends?? (para Hashblock puth?)
 		for(int port : ports)
 		{
@@ -89,21 +89,21 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 	private void DeliverWrite(Socket connection,
 			int ts, byte[] data, byte[] signature, PublicKey pKey)
 	{
-		if(ts > _ts)
-		{
-			_ts = ts;
-			_val = v;
-			_signature = signature;
-			//CHAMAR SERVICE.PUTS?
-			String response = Service.putK();
-			String m = Constants.ACKTYPE +
-					Constants.DELIMITER + ts +
-					Constants.DELIMITER + response;
-			
-			//como é só 1 write não é preciso fazer ACK sempre
-			//pode estar dentro da condição
-			Send(connection, m.getBytes());
-		}
+//		if(ts > _ts)
+//		{
+//			_ts = ts;
+//			_val = v;
+//			_signature = signature;
+//			//CHAMAR SERVICE.PUTS?
+//			String response = Service.putK();
+//			String m = Constants.ACKTYPE +
+//					Constants.DELIMITER + ts +
+//					Constants.DELIMITER + response;
+//
+//			//como ï¿½ sï¿½ 1 write nï¿½o ï¿½ preciso fazer ACK sempre
+//			//pode estar dentro da condiï¿½ï¿½o
+//			Send(connection, m.getBytes());
+//		}
 	}
 	
 	private String DeliverAck(int port, int ts, String response)
@@ -123,7 +123,7 @@ public class OneWriteNReadByzantineRegularRegister extends AuthPerfectPointToPoi
 		String m = Constants.VALUETYPE + Constants.DELIMITER +
 				r + Constants.DELIMITER + ts + Constants.DELIMITER + 
 				v + Constants.DELIMITER + signature;
-		Send(connection, m.getBytes());
+//		Send(connection, m.getBytes());
 	}
 	
 	//TODO method

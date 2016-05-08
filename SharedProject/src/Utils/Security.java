@@ -401,14 +401,14 @@ public class Security {
         }
     }
     
-    public static boolean verifyHMac(byte[] secretKey, byte[] data, byte[] dataToVerify, String algorithm)
+    public static boolean verifyHMac(byte[] secretKey, byte[] data, byte[] expectedMac, String algorithm)
     {
     	SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
     	try {
             Mac mac = Mac.getInstance(algorithm);
             mac.init(signingKey);
-            mac.doFinal(data);
-            return Utils.equals(data,dataToVerify);
+            byte[] macBytes = mac.doFinal(data);
+            return Utils.equals(macBytes,expectedMac);
         }
         catch(InvalidKeyException e) {
             throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");

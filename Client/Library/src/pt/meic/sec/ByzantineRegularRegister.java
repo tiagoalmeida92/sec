@@ -1,6 +1,10 @@
 package pt.meic.sec;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -8,6 +12,7 @@ public class ByzantineRegularRegister {
 
     private final List<Integer> _processesPorts;
     private final int _faults;
+    private final PrivateKey _privateKey;
     private int _ts;
     private byte[] _val;
     private byte[] _signature;
@@ -16,24 +21,25 @@ public class ByzantineRegularRegister {
     private int _rid;
     private HashMap<Integer, String> _readList;
     private int _nProcessesToTolerateFaults;
+    private byte[] writeResult;
 
 
     //Byzantine quorum tolerating f faults
-    public ByzantineRegularRegister(String[] processesPorts, int faults)
+    public ByzantineRegularRegister(PrivateKey privateKey, String[]processesPorts, int faults)
     {
         _nProcessesToTolerateFaults = processesPorts.length;
         _processesPorts = Arrays.stream(processesPorts).map(Integer::parseInt).collect(Collectors.toList());
         _faults = faults;
-
+        _privateKey = privateKey;
         _wts = 0;
-        _ackList = new HashMap<Integer,Boolean>();
+        _ackList = new HashMap<>();
         _rid = 0;
-        _readList = new HashMap<Integer,String>();
+        _readList = new HashMap<>();
     }
 
     public byte[] read(byte[] data) throws IOException {
         _rid++;
-        _readList = new HashMap<>();
+        _readList.clear();
 
 
         _processesPorts.parallelStream().forEach(port -> {
@@ -51,7 +57,7 @@ public class ByzantineRegularRegister {
 
 
         });
-        if(_wts > (_nProcessesToTolerateFaults + _faults) / 2){
+        if(_readList.size() > (_nProcessesToTolerateFaults + _faults) / 2){
             String highest = HighestHashMapTs(_readList);
             _readList.clear();
             return highest.getBytes();
@@ -60,7 +66,25 @@ public class ByzantineRegularRegister {
         return null;
     }
 
-    public byte[] write(byte[] contents) {
+    public byte[] write(byte[] data) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        _wts++;
+        _ackList.clear();
+        byte[] signature = SecurityUtils.Sign(data, _privateKey);
+
+        _processesPorts.parallelStream().forEach(port -> {
+            try {
+                AuthPerfectPointToPointLinks al = new AuthPerfectPointToPointLinks(port);
+                al.Send(Utils.concat(data, signature));
+                writeResult = al.Deliver();
+                _ackList.put(port, true);
+
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
+        if(_ackList.size() > (_nProcessesToTolerateFaults + _faults) / 2){
+            return writeResult;
+        }
         return null;
     }
 

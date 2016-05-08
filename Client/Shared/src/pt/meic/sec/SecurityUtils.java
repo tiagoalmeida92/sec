@@ -1,7 +1,10 @@
 package pt.meic.sec;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Formatter;
 
 public class SecurityUtils
@@ -26,6 +29,41 @@ public class SecurityUtils
         return Verify(data, signature, SecurityUtils.getKey(publicKey));
     }
 
+
+    public static byte[] generateHMac(byte[] secretKey, byte[] data, String algorithm) {
+
+        SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
+
+        try {
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(signingKey);
+
+            return mac.doFinal(data);
+        }
+        catch(InvalidKeyException e) {
+            throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");
+        }
+        catch(NoSuchAlgorithmException e) {
+            throw new IllegalStateException("the system doesn't support algorithm " + algorithm, e);
+        }
+    }
+
+    public static boolean verifyHMac(byte[] secretKey, byte[] data, byte[] expectedMac, String algorithm)
+    {
+        SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
+        try {
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(signingKey);
+            byte[] macBytes = mac.doFinal(data);
+            return Arrays.equals(macBytes, expectedMac);
+        }
+        catch(InvalidKeyException e) {
+            throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");
+        }
+        catch(NoSuchAlgorithmException e) {
+            throw new IllegalStateException("the system doesn't support algorithm " + algorithm, e);
+        }
+    }
 
 
     public static byte[] Sign(byte[] data, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException

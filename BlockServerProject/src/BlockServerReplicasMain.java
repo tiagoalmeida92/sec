@@ -10,6 +10,10 @@ public class BlockServerReplicasMain {
 	public static void main(String[] args)
 	{
 		System.out.println("Starting Block Servers...");
+		if(args.length < 2){
+			System.out.println("missing arguments port and faults");
+			return;
+		}
 		int port = Integer.valueOf(args[0]);
 		String nFaults = args[1];
 		int nReplicas = 3 * Integer.valueOf(args[1]) + 1;
