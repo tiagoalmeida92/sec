@@ -20,14 +20,14 @@ public class ByzantineRegularRegister {
     private HashMap<Integer, Boolean> _ackList;
     private int _rid;
     private HashMap<Integer, String> _readList;
-    private int _nProcessesToTolerateFaults;
+    private int _replicas;
     private byte[] writeResult;
 
 
     //Byzantine quorum tolerating f faults
     public ByzantineRegularRegister(PrivateKey privateKey, String[]processesPorts, int faults)
     {
-        _nProcessesToTolerateFaults = processesPorts.length;
+        _replicas = processesPorts.length;
         _processesPorts = Arrays.stream(processesPorts).map(Integer::parseInt).collect(Collectors.toList());
         _faults = faults;
         _privateKey = privateKey;
@@ -57,7 +57,7 @@ public class ByzantineRegularRegister {
 
 
         });
-        if(_readList.size() > (_nProcessesToTolerateFaults + _faults) / 2){
+        if(_readList.size() > (_replicas + _faults) / 2){
             String highest = HighestHashMapTs(_readList);
             _readList.clear();
             return highest.getBytes();
@@ -76,13 +76,15 @@ public class ByzantineRegularRegister {
                 AuthPerfectPointToPointLinks al = new AuthPerfectPointToPointLinks(port);
                 al.Send(Utils.concat(data, signature));
                 writeResult = al.Deliver();
+
                 _ackList.put(port, true);
 
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         });
-        if(_ackList.size() > (_nProcessesToTolerateFaults + _faults) / 2){
+        if(_ackList.size() > (_replicas + _faults) / 2){
+            _ackList.clear();
             return writeResult;
         }
         return null;

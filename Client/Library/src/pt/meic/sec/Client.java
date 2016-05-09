@@ -153,10 +153,13 @@ public class Client {
 //        return (byte[]) socketInputStream.readObject();
     }
 
-    private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException {
+    private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        String header = PUT_FILE_CONTENT_BLOCK + Constants.DELIMITER;
+        contents = Utils.concat(header.getBytes(), contents);
         byte[] write = byzantineRegularRegister.write(contents);
+
         return new String(write);
-//        socketOutputStream.writeObject(PUT_FILE_CONTENT_BLOCK);
+//        socketOutputStream.writeObject();
 //        socketOutputStream.writeObject(Arrays.copyOf(contents, Constants.CBLOCKLENGTH));
 //        return (String) socketInputStream.readObject();
     }
@@ -170,7 +173,16 @@ public class Client {
 //        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlockBytes, privateKey));
 //        socketOutputStream.writeObject(publicKeyBlock.publicKey);
 //        String id = (String) socketInputStream.readObject();
-        byte[] write = byzantineRegularRegister.write(publicKeyBlock.toBytes(privateKey));
+
+        String header = PUT_PUBLIC_KEY_BLOCK;
+        byte[] publicKeyBlockBytes = publicKeyBlock.toBytes(privateKey);
+        byte[] signature = SecurityUtils.Sign(publicKeyBlockBytes, privateKey);
+        String contents = header + Constants.DELIMITER
+                +  SecurityUtils.byteToHex(publicKeyBlockBytes) + Constants.DELIMITER
+                +  SecurityUtils.byteToHex(signature) + Constants.DELIMITER
+                + SecurityUtils.byteToHex(certificate.getPublicKey().getEncoded());
+
+        byte[] write = byzantineRegularRegister.write(contents.getBytes());
         String id = new String(write);
         if (id.contains("[Integrity]"))
             throw new DependabilityException(id);
