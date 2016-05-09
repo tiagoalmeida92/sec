@@ -43,7 +43,7 @@ public class Service {
 					return Constants.ACKTYPE + Constants.DELIMITER +
 							writerTimestamp + Constants.DELIMITER + 
 							Service.putK(data, signature, publicK);
-			}	
+			}
 		} catch (UnsupportedEncodingException e) {
 		} catch (NoSuchAlgorithmException e) {
 		}
@@ -53,7 +53,7 @@ public class Service {
 	public static String BizantinePutH(byte[] data)
 	{
 		String response = Service.putH(data);
-		return Constants.ACKTYPE + Constants.DELIMITER + response;
+		return Constants.ADAPTED_ACKTYPE + Constants.DELIMITER + response;
 	}
 	
 	public static String BizantineGet(String id, int rid)
