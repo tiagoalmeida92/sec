@@ -40,7 +40,7 @@ public class Client {
 
             if (certificate != null) return;
             createSelfCertificate();
-
+            byzantineRegularRegister.setPrivateKey(privateKey);
             String result = registerCertificate(certificate);
             if (result == null || result.equals(Constants.CERTIFOCATE_INVALID_OR_TAMPERED)) {
                 throw new DependabilityException(Constants.CERTIFICATE_INVALID);

@@ -12,7 +12,7 @@ public class ByzantineRegularRegister {
 
     private final List<Integer> _processesPorts;
     private final int _faults;
-    private final PrivateKey _privateKey;
+    private PrivateKey _privateKey;
     private int _ts;
     private byte[] _val;
     private byte[] _signature;
@@ -25,12 +25,11 @@ public class ByzantineRegularRegister {
 
 
     //Byzantine quorum tolerating f faults
-    public ByzantineRegularRegister(PrivateKey privateKey, String[]processesPorts, int faults)
+    public ByzantineRegularRegister(String[]processesPorts, int faults)
     {
         _replicas = processesPorts.length;
         _processesPorts = Arrays.stream(processesPorts).map(Integer::parseInt).collect(Collectors.toList());
         _faults = faults;
-        _privateKey = privateKey;
         _wts = 0;
         _ackList = new HashMap<>();
         _rid = 0;
@@ -111,5 +110,8 @@ public class ByzantineRegularRegister {
     }
 
 
+    public void setPrivateKey(PrivateKey privateKey){
+        _privateKey = privateKey;
+    }
 
 }

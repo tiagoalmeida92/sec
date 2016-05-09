@@ -39,3 +39,4 @@
 *.pkblock
 *.clients
 */bin/
+Client/.idea/workspace.xml
