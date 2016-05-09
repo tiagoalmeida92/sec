@@ -56,12 +56,12 @@ public class Constants {
 	public static final long FRESHNESSTIMESTAMP = 5000;
 
 	//BYZANTINE METHOD TYPE
-	public static final String ACKTYPE = "ACK";
-	public static final String WRITETYPE = "WRITE";
-	public static final String READTYPE = "READ";
-	public static final String VALUETYPE = "VALUE";
-	public static final String ADAPTED_ACKTYPE = "ADAPTED_ACK";
-	public static final String ADAPTED_WRITETYPE = "ADAPTED_WRITE";
+	public static final String ACKTYPE = "put_k_ack";
+	public static final String WRITETYPE = "put_k";
+	public static final String READTYPE = "get";
+	public static final String VALUETYPE = "get_ack";
+	public static final String ADAPTED_ACKTYPE = "put_h_ack";
+	public static final String ADAPTED_WRITETYPE = "put_h";
 	public static final String DELIMITER = ",";
 	
 }
