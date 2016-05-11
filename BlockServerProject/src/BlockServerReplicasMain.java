@@ -43,7 +43,7 @@ public class BlockServerReplicasMain {
 		}
 	}
 	
-	private static Process executeProcess(Class klass, 
+	public static Process executeProcess(Class klass, 
 			String port, String nReplicas, String nFaults) throws IOException{
 		String javaHome = System.getProperty("java.home");
         String javaBin = javaHome +
@@ -79,7 +79,7 @@ public class BlockServerReplicasMain {
 	    }).start();
 	}
 	
-	public static void ListFiles(String directoryName, ArrayList<File> files) {
+	public static void listFiles(String directoryName, ArrayList<File> files) {
 	    File directory = new File(directoryName);
 
 	    // get all the files from a directory
@@ -90,7 +90,7 @@ public class BlockServerReplicasMain {
 		        if (file.isFile()) {
 		            files.add(file);
 		        } else if (file.isDirectory()) {
-		        	ListFiles(file.getAbsolutePath(), files);
+		        	listFiles(file.getAbsolutePath(), files);
 		        }
 		    }
 	    }

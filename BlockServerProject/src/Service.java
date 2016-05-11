@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
@@ -24,13 +25,19 @@ import Utils.Utils;
 
 public class Service {
 	
+	//For the testsS3.java
+	public static int receivedTimestampForTestsS3;
+	public static boolean isBizantineSignature;
+	
 	public static String BizantinePutK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		final int fromIndex = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
 		int writerTimestamp, currentTimestamp=0;
-		try {
+		String response = null;
+		try {	
 			writerTimestamp = Integer.valueOf(new String(
 					Arrays.copyOfRange(data, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE),"UTF-8"));
+				
 			String pkFileName = Security.GetPublicKeyHash(publicK);
 			byte[] storedData = Service.get(pkFileName);
 			if(storedData != null)
@@ -38,11 +45,15 @@ public class Service {
 						Arrays.copyOfRange(storedData, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE),"UTF-8"));
 			if(writerTimestamp > currentTimestamp)
 			{
-				String response = Service.putK(data, signature, publicK);
+				response = Service.putK(data, signature, publicK);
+				//Begin TestsS3
+				if(receivedTimestampForTestsS3 == 0)
+					writerTimestamp = receivedTimestampForTestsS3;
+				//End TestsS3
 				if(pkFileName.equals(response))
 					return Constants.ACKTYPE + Constants.DELIMITER +
 							writerTimestamp + Constants.DELIMITER + 
-							Service.putK(data, signature, publicK);
+							response;
 			}
 		} catch (UnsupportedEncodingException e) {
 		} catch (NoSuchAlgorithmException e) {
@@ -65,7 +76,9 @@ public class Service {
 			byte[] data = new byte[Constants.CBLOCKLENGTH];
 			reader = new BufferedInputStream(new FileInputStream(Constants.CBLOCKPATH+id+Constants.CBLOCKEXTENSION));
 			reader.read(data, 0, data.length);
-			reader.close();		
+			reader.close();
+			if(receivedTimestampForTestsS3 != 0)
+				rid = receivedTimestampForTestsS3;
 			return Constants.VALUETYPE + Constants.DELIMITER + rid + Constants.DELIMITER + Utils.byteToHex(data);
 
 		} catch (FileNotFoundException e) {
@@ -84,6 +97,16 @@ public class Service {
 					return null;
 				} catch (IOException e1) {
 					return null;
+				}
+				if(receivedTimestampForTestsS3 != 0)
+					rid = receivedTimestampForTestsS3;
+				if(isBizantineSignature)
+				{
+					byte[] signature = Arrays.copyOfRange(data, 0, Constants.SIGNATURE_SIZE);
+					signature[Constants.SIGNATURE_SIZE-1] = 
+							(byte) (signature[Constants.SIGNATURE_SIZE-1] == 1 ? 0 : 1);
+					byte[] remaining = Arrays.copyOfRange(data, Constants.SIGNATURE_SIZE, data.length);
+					data = Utils.concat(signature, remaining);
 				}
 				return Constants.VALUETYPE + Constants.DELIMITER + rid + Constants.DELIMITER + Utils.byteToHex(data);
 			}
