@@ -53,7 +53,7 @@ public class Worker implements Runnable {
 						
 					case Constants.ADAPTED_WRITETYPE:
 						data = Security.HexStringToByteArray(mSplited[1]);
-						id = Service.putH(data);
+						id = Service.BizantinePutH(data);
 						AuthPerfectPointToPointLinks.Send(_connection, id.getBytes());
 						break;
 					
