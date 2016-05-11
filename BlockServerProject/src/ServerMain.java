@@ -14,11 +14,9 @@ public class ServerMain {
 	public static void main(String[] args)
 	{
 		int port = Integer.valueOf(args[0]);
-		int nReplicas = Integer.valueOf(args[1]);
-		int nFaults = Integer.valueOf(args[2]);
 
 		System.out.println("Starting Block Server... Port: "+ (port));
-		MultiThread server = new MultiThread(port, nReplicas , nFaults);
+		MultiThread server = new MultiThread(port);
 		Thread t = new Thread(server);
 		t.start();			
 		

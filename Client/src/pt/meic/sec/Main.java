@@ -14,14 +14,14 @@ public class Main {
     private static Client client;
 
     public static void main(String[] args) {
-        if(args.length == 0){
-            out.println("args is empty. send the first replica port");
+        if(args.length < 2){
+            out.println("args missing. send first replica port and faulty processes");
         }
-        int replicaPort = Integer.parseInt(args[0]);
-        Scanner scanner = new Scanner(System.in);
-        out.print("Maximum faults?");
-        int maxFaults = scanner.nextInt();
+
         displayCommands();
+
+        int replicaPort = Integer.parseInt(args[0]);
+        int maxFaults = Integer.parseInt(args[1]);
         int nReplicas = 3 * maxFaults + 1;
         List<Integer> replicasPorts = new ArrayList<>();
         for (int i = 0; i < nReplicas; i++) {
@@ -29,6 +29,7 @@ public class Main {
         }
         client = new Client(replicasPorts, maxFaults);
 
+        Scanner scanner = new Scanner(System.in);
         while (true) {
             out.print(">");
             String s = scanner.nextLine();

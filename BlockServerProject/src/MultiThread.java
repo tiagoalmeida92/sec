@@ -23,11 +23,9 @@ public class MultiThread implements Runnable{
 	{	
 	}
 	
-	public MultiThread(int port, int nReplicas, int nFaults)
+	public MultiThread(int port)
 	{
 		serverPort = port;
-		_nReplicas = nReplicas;
-		_nFaults = nFaults;
 		Constants.PORT = port;
 	}
 	
@@ -49,7 +47,7 @@ public class MultiThread implements Runnable{
                 throw new RuntimeException(
                     "Error accepting client connection", e);
             }
-            worker = new Worker(clientSocket, _nReplicas, _nFaults);
+            worker = new Worker(clientSocket);
             new Thread(
                     worker
                 ).start();

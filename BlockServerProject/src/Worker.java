@@ -13,14 +13,10 @@ import Utils.Security;
 public class Worker implements Runnable {
 
 	private Socket _connection = null;
-	private int _nReplicas;
-	private int _nFaults;
 	
-	public Worker(Socket connection, int nReplicas, int nFaults)
+	public Worker(Socket connection)
 	{
 		_connection = connection;
-		_nReplicas = nReplicas;
-		_nFaults = nFaults;
 	}
 	
 	@Override
