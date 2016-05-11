@@ -4,6 +4,9 @@ import java.io.File;
 
 public class Constants {
 
+	public static final String PUT_PUBLIC_KEY_BLOCK = "put_k";
+	public static final String PUT_FILE_CONTENT_BLOCK = "put_h";
+
 	//File paths
 	public static final String PKBLOCKEXTENSION = ".pkblock";
 	public static final String CBLOCKEXTENSION = ".cblock";
@@ -33,5 +36,12 @@ public class Constants {
 	public static final String TAMPEREDWITHCONTENTBLOCKEXCEPTIONMESSAGE = "An attacker tampered the received content block";
 
 
+	//BYZANTINE METHOD TYPE
+	public static final String ACKTYPE = "put_k_ack";
+	public static final String WRITETYPE = "put_k";
+	public static final String READ_BLOCK = "get";
+	public static final String READ_ACK = "get_ack";
+	public static final String ADAPTED_ACKTYPE = "put_h_ack";
+	public static final String ADAPTED_WRITETYPE = "put_h";
 	public static final String DELIMITER = ",";
 }
