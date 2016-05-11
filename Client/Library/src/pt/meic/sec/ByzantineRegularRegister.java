@@ -3,10 +3,8 @@ package pt.meic.sec;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ByzantineRegularRegister {
 
@@ -36,19 +34,22 @@ public class ByzantineRegularRegister {
     }
 
     public byte[] read(ReadType readType, String id) throws IOException {
-        String header = Constants.READ_BLOCK;
-        byte[] request = (header + Constants.DELIMITER + id).getBytes();
-
         _rid++;
         _readList.clear();
+
+        String header = Constants.READ_BLOCK;
+        byte[] request = (header + Constants.DELIMITER
+                + id + Constants.DELIMITER
+                +_rid).getBytes();
+
         _processesPorts.parallelStream().limit(_faults + 1).forEach(port -> {
             AuthPerfectPointToPointLinks al = null;
             try {
                 al = new AuthPerfectPointToPointLinks(port);
                 al.Send(request);
-                byte[] result = al.Deliver();
-                if(verifyReadResponse(result, readType, id)) {
-                    _readList.put(port, new String(result));
+                byte[] deliver = al.Deliver();
+                if(verifyReadResponse(deliver, readType, id)) {
+                    _readList.put(port, new String(deliver));
                 }
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -57,10 +58,55 @@ public class ByzantineRegularRegister {
         if(_readList.size() > (_replicas + _faults) / 2){
             String highest = HighestHashMapTs(_readList);
             _readList.clear();
-            return highest.getBytes();
+            byte[] finalRes = getReadResult(readType, highest);
+            return finalRes;
         }
 
         return null;
+    }
+
+    public byte[] write(String header, byte[] data, String expectedHash, int timeStamp) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        _wts++;
+        _ackList.clear();
+
+        int totalCalls;
+        float neededQuorom;
+        if(header.equals(Constants.PUT_PUBLIC_KEY_BLOCK)){
+            totalCalls = _faults * 3 + 1;
+            neededQuorom = (float)(_replicas + _faults) / 2;
+        }else {
+            //PUT H self verifying
+            totalCalls = _faults + 1;
+            neededQuorom = 0.5f;
+        }
+
+        _processesPorts.parallelStream().limit(totalCalls).forEach(port -> {
+            try {
+                AuthPerfectPointToPointLinks al = new AuthPerfectPointToPointLinks(port);
+                al.Send(data);
+
+                byte[] deliver = al.Deliver();
+                byte[] result = verifyAndGetWriteResponse(deliver, expectedHash, timeStamp);
+                if(result != null){
+                    writeResult = result;
+                    _ackList.put(port, true);
+                }
+
+
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
+        if(_ackList.size() > neededQuorom){
+            _ackList.clear();
+            return writeResult;
+        }
+        return null;
+    }
+
+    private byte[] getReadResult(ReadType type, String highest) {
+        String res = highest.split(Constants.DELIMITER)[2];
+        return type == ReadType.PublicKeyBlock ? SecurityUtils.hexStringToByteArray(res) : res.getBytes();
     }
 
     private boolean verifyReadResponse(byte[] result, ReadType readType, String id) {
@@ -96,36 +142,18 @@ public class ByzantineRegularRegister {
         return false;
     }
 
-    public byte[] write(String header, byte[] data) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        _wts++;
-        _ackList.clear();
 
-        int totalCalls;
-        float neededQuorom;
-        if(header.equals(Constants.PUT_PUBLIC_KEY_BLOCK)){
-            totalCalls = _faults * 3 + 1;
-            neededQuorom = (float)(_replicas + _faults) / 2;
-        }else {
-            //PUT H self verifying
-            totalCalls = _faults + 1;
-            neededQuorom = 1;
-        }
 
-        _processesPorts.parallelStream().limit(totalCalls).forEach(port -> {
-            try {
-                AuthPerfectPointToPointLinks al = new AuthPerfectPointToPointLinks(port);
-                al.Send(data);
-                writeResult = al.Deliver();
-
-                _ackList.put(port, true);
-
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        });
-        if(_ackList.size() > neededQuorom){
-            _ackList.clear();
-            return writeResult;
+    private byte[] verifyAndGetWriteResponse(byte[] result, String expectedHash, int timeStamp) {
+        String stringRes = new String(result);
+        String[] tokens = stringRes.split(Constants.DELIMITER);
+        String ack = tokens[0];
+        if(ack.equals(Constants.ADAPTED_ACKTYPE) && tokens[1].equals(expectedHash)){
+            return tokens[1].getBytes();
+        }else if(ack.equals(Constants.ACKTYPE)){
+            int ts = Integer.parseInt(tokens[1]);
+            if (ts == timeStamp) return tokens[2].getBytes();
+            else return null;
         }
         return null;
     }
@@ -137,13 +165,11 @@ public class ByzantineRegularRegister {
         {
             String value = entry.getValue();
             int ts = Integer
-                    .valueOf(value.substring(0,
-                            value.indexOf(Constants.DELIMITER)));
+                    .valueOf(value.split(Constants.DELIMITER)[1]);
             if(ts > localHighestTs)
             {
                 localHighestTs = ts;
-                localHighestVal = value.substring(
-                        value.indexOf(Constants.DELIMITER)+1);
+                localHighestVal = value;
             }
         }
 

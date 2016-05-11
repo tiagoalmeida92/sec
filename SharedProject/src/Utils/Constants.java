@@ -11,7 +11,7 @@ public class Constants {
 	public static final String CBLOCKEXTENSION = ".cblock";
 	public static String PKBLOCKPATH = new File("").getAbsolutePath()+"\\"+PORT+"\\pkblocks\\";
 	public static String CBLOCKPATH = new File("").getAbsolutePath()+"\\"+PORT+"\\cblocks\\";
-	public static final String SECRETKEYFILE = new File("").getAbsolutePath()+"\\bin\\secret.key";
+	public static final String SECRETKEYFILE = "secret.key";
 	public static final String CERTIFICATESFILEPATH = new File("").getAbsolutePath()+"\\certificates.clients";
 	public static final String CERTIFICATESFILENAME = "certificates.clients";
 	

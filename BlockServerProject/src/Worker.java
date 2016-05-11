@@ -30,8 +30,7 @@ public class Worker implements Runnable {
 			ObjectInputStream inputStream;
 			ObjectOutputStream outputStream;
 			//verify
-			byte[] m = 
-					AuthPerfectPointToPointLinks.Deliver(_connection);
+			byte[] m = AuthPerfectPointToPointLinks.Deliver(_connection);
 			if( m != null)
 			{
 				String[] mSplited = new String(m).split(Constants.DELIMITER);

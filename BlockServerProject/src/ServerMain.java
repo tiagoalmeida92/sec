@@ -1,3 +1,5 @@
+import java.util.Scanner;
+
 public class ServerMain {
 	
 	public static class BlockServer{

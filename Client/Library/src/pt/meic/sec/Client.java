@@ -17,7 +17,7 @@ public class Client {
     private static final String READ_BLOCK = "get";
     private static final String READ_PUBLIC_KEYS = "readPubKeys";
     private static final String STORE_PUBLIC_KEY = "storePubKey";
-    private static final int INITIAL_TIMESTAMP = 0;
+    private static final int INITIAL_TIMESTAMP = 1;
     public static final int MAX_FAULTS = 2;
 
     private final ByzantineRegularRegister byzantineRegularRegister;
@@ -39,23 +39,11 @@ public class Client {
 
             if (certificate != null) return;
             createSelfCertificate();
-            String result = registerCertificate(certificate);
-            if (result == null || result.equals(Constants.CERTIFOCATE_INVALID_OR_TAMPERED)) {
-                throw new DependabilityException(Constants.CERTIFICATE_INVALID);
-            } else {
-                if (result.equals(Constants.CERTIFICATE_ALREADY_REGISTERED)) {
-                    publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
-                } else {
-                    if (result.equals(Constants.SUCCESS)) {
-                        PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
-                        publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
-                        if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
-                            throw new DependabilityException(Constants.CERTIFICATE_TAMPERED);
-                        }
-                    }
-                }
+            PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
+            publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
+            if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
+                throw new DependabilityException(Constants.CERTIFICATE_TAMPERED);
             }
-
         } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException
                 | NoSuchProviderException | SignatureException | CertificateException | InvalidKeyException e) {
             throw new RuntimeException(e);
@@ -76,7 +64,7 @@ public class Client {
 
             //Pad file with 0s
             if (endIndex >= contentBlocks.size()) {
-                String contentBlockId = writeContentBlock(new byte[0]);
+                String contentBlockId = writeContentBlock(new byte[]{0});
                 while (endIndex >= contentBlocks.size()) {
                     contentBlocks.add(contentBlockId);
                 }
@@ -145,33 +133,18 @@ public class Client {
     private byte[] readBlock(ReadType readType, String id) throws IOException, ClassNotFoundException {
         byte[] readResult = byzantineRegularRegister.read(readType, id);
         return readResult;
-//        connectToServer();
-//        socketOutputStream.writeObject(READ_BLOCK);
-//        socketOutputStream.writeObject(id);
-//        return (byte[]) socketInputStream.readObject();
     }
 
     private String writeContentBlock(byte[] contents) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         String header = PUT_FILE_CONTENT_BLOCK;
+        String hash = SecurityUtils.Hash(contents);
         contents = (header + Constants.DELIMITER + SecurityUtils.byteToHex(contents)).getBytes();
-        byte[] write = byzantineRegularRegister.write(header, contents);
-
-        return new String(write);
-//        socketOutputStream.writeObject();
-//        socketOutputStream.writeObject(Arrays.copyOf(contents, Constants.CBLOCKLENGTH));
-//        return (String) socketInputStream.readObject();
+        byte[] write = byzantineRegularRegister.write(header, contents, hash, 0);
+        return write != null ? new String(write) : null;
     }
 
 
     private String writePublicKeyBlock(PublicKeyBlock publicKeyBlock) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, DependabilityException, SignatureException, InvalidKeyException {
-//        connectToServer();
-//        socketOutputStream.writeObject(PUT_PUBLIC_KEY_BLOCK);
-//        byte[] pkBlockBytes = publicKeyBlock.toBytes(privateKey);
-//        socketOutputStream.writeObject(pkBlockBytes);
-//        socketOutputStream.writeObject(SecurityUtils.Sign(pkBlockBytes, privateKey));
-//        socketOutputStream.writeObject(publicKeyBlock.publicKey);
-//        String id = (String) socketInputStream.readObject();
-
         String header = PUT_PUBLIC_KEY_BLOCK;
         byte[] publicKeyBlockBytes = publicKeyBlock.toBytes(privateKey);
         byte[] signature = SecurityUtils.Sign(publicKeyBlockBytes, privateKey);
@@ -180,7 +153,7 @@ public class Client {
                 +  SecurityUtils.byteToHex(signature) + Constants.DELIMITER
                 + SecurityUtils.byteToHex(certificate.getPublicKey().getEncoded());
 
-        byte[] write = byzantineRegularRegister.write(header, contents.getBytes());
+        byte[] write = byzantineRegularRegister.write(header, contents.getBytes(), null, publicKeyBlock.timestamp);
         String id = new String(write);
         if (id.contains("[Integrity]"))
             throw new DependabilityException(id);
@@ -199,10 +172,10 @@ public class Client {
 
     private String registerCertificate(X509Certificate certificate) {
         try {
-            Socket socket = new Socket("localhost", replicas.get(0));
+            Socket socket = new Socket((String)null, replicas.get(0));
             ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-            outputStream.writeObject(STORE_PUBLIC_KEY);
+            outputStream.writeObject(STORE_PUBLIC_KEY.getBytes());
             outputStream.writeObject(certificate);
             String result = (String) inputStream.readObject();
             return result;
@@ -214,39 +187,39 @@ public class Client {
     }
 
     public List<X509Certificate> list() throws DependabilityException {
-        try {
-            Socket socket = new Socket("localhost", replicas.get(0));
-            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-            outputStream.writeObject(READ_PUBLIC_KEYS);
-            List<String> result = (List<String>) inputStream.readObject();
-            if (result == null || result.size() < 2) {
-                return new ArrayList<>();
-            }
-            String hash = result.get(0);
-            result.remove(0);
-            byte[] data = Utils.toByteArray(result);
-            boolean valid = SecurityUtils.verifyHash(data, hash);
-            if (!valid) {
-                throw new DependabilityException("Certificates Tampered");
-            }
-            List<X509Certificate> certificates = new ArrayList<>();
-            CertificateFactory factory = CertificateFactory.getInstance("X.509");
-            for (String certHexa : result) {
-                byte[] certBytes = SecurityUtils.hexStringToByteArray(certHexa);
-                X509Certificate certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
-                certificates.add(certificate);
-            }
-            return certificates;
-        } catch (IOException | ClassNotFoundException e) {
+//        try {
+//            Socket socket = new Socket((String)null, replicas.get(0));
+//            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+//            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+//            outputStream.writeObject(READ_PUBLIC_KEYS);
+//            List<String> result = (List<String>) inputStream.readObject();
+//            if (result == null || result.size() < 2) {
+//                return new ArrayList<>();
+//            }
+//            String hash = result.get(0);
+//            result.remove(0);
+//            byte[] data = Utils.toByteArray(result);
+//            boolean valid = SecurityUtils.verifyHash(data, hash);
+//            if (!valid) {
+//                throw new DependabilityException("Certificates Tampered");
+//            }
+//            List<X509Certificate> certificates = new ArrayList<>();
+//            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+//            for (String certHexa : result) {
+//                byte[] certBytes = SecurityUtils.hexStringToByteArray(certHexa);
+//                X509Certificate certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+//                certificates.add(certificate);
+//            }
+//            return certificates;
+//        } catch (IOException | ClassNotFoundException e) {
+//            return new ArrayList<>();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//            return new ArrayList<>();
+//        } catch (CertificateException e) {
+//            e.printStackTrace();
             return new ArrayList<>();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        } catch (CertificateException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+//        }
     }
 
     private void createSelfCertificate() throws NoSuchProviderException, NoSuchAlgorithmException, IOException, InvalidKeyException, CertificateException, SignatureException {
@@ -260,32 +233,6 @@ public class Client {
 
         certificate = keypair.getSelfCertificate(x500Name, 60 * 60 * 24 * 365);
         privateKey = keypair.getPrivateKey();
-    }
-
-    public void init(X509Certificate certificate) throws DependabilityException {
-        try {
-
-            String result = registerCertificate(certificate);
-            if (result == null || result.equals(Constants.CERTIFOCATE_INVALID_OR_TAMPERED)) {
-                throw new DependabilityException(Constants.CERTIFICATE_INVALID);
-            } else {
-                if (result.equals(Constants.CERTIFICATE_ALREADY_REGISTERED)) {
-                    publicKeyBlockId = SecurityUtils.Hash(certificate.getPublicKey().getEncoded());
-                } else {
-                    if (result.equals(Constants.SUCCESS)) {
-                        PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
-                        publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
-                        if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
-                            throw new DependabilityException(Constants.CERTIFICATE_TAMPERED);
-                        }
-                    }
-                }
-            }
-
-        } catch (NoSuchAlgorithmException | IOException | ClassNotFoundException
-                | SignatureException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

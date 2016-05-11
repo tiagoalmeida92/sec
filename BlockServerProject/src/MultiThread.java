@@ -16,8 +16,6 @@ public class MultiThread implements Runnable{
 	private boolean isStopped = false;
 	private Thread runningThread = null;
 	private Worker worker = null;
-	private int _nReplicas;
-	private int _nFaults;
 	
 	public MultiThread()
 	{	
