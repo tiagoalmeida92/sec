@@ -30,7 +30,9 @@ public class Worker implements Runnable {
 			byte[] data,signature;
 			PublicKey publicK;
 			String method,id;
-
+			X509Certificate cert;
+			ObjectInputStream inputStream;
+			ObjectOutputStream outputStream;
 			//verify
 			byte[] m = 
 					AuthPerfectPointToPointLinks.Deliver(_connection);
@@ -64,15 +66,22 @@ public class Worker implements Runnable {
 						AuthPerfectPointToPointLinks.Send(_connection, 
 								message.getBytes());
 						break;
-	//				case "storePubKey":
-	//					cert = (X509Certificate) inputStream.readObject();
-	//					String result = Service.storePubKey(cert);
-	//					outputStream.writeObject(result);
-	//					outputStream.flush();
-	//					break;
-	//				case "readPubKeys":
-	//					outputStream.writeObject(Service.readPubKeys());
-	//					break;
+					case "storePubKey":
+						inputStream =
+								new ObjectInputStream(_connection.getInputStream());
+						outputStream = 
+								new ObjectOutputStream(_connection.getOutputStream());
+						cert = (X509Certificate) inputStream.readObject();
+						String result = Service.storePubKey(cert);
+						outputStream.writeObject(result);
+						outputStream.flush();
+						break;
+					case "readPubKeys":
+						outputStream = 
+							new ObjectOutputStream(_connection.getOutputStream());
+						outputStream.writeObject(Service.readPubKeys());
+						outputStream.flush();
+						break;
 					default: 
 						break;
 				}
