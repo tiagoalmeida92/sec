@@ -1,1 +1,1 @@
-java -cp "bin;bin\*" pt.meic.sec.Main
+java -cp "bin;bin\*" pt.meic.sec.Main 62345 1

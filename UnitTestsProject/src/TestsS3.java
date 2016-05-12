@@ -80,7 +80,7 @@ public class TestsS3 {
 			client.init();
 			
 			//The server send a bad flag (wts = 0)
-			Service.receivedTimestampForTestsS3 = 0;
+			Service.receivedTimestampForTestsS3 = true;
 			
 			byte[] data = new byte[Constants.CBLOCKLENGTH];
 			Random r = new Random();
@@ -143,7 +143,7 @@ public class TestsS3 {
 	        String publicKeyBlockId = client.publicKeyBlockId;
 	        
 			//The server send a bad flag (rid = 0)
-			Service.receivedTimestampForTestsS3 = 0;
+			Service.receivedTimestampForTestsS3 = true;
 	        byte[] finalbytes = 
 	        		client.read(publicKeyBlockId, 0, Constants.CBLOCKLENGTH);
 	        

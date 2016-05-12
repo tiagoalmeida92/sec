@@ -1,10 +1,5 @@
 package pt.meic.sec;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -35,11 +30,26 @@ public class Utils {
         return c;
     }
 
-    public static String getTimestamp(){
-        DateTimeZone zone = DateTimeZone.forID("Europe/Lisbon");
-        DateTime timestamp = new DateTime(zone);
-        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern(TIMESTAMP_FORMAT);
-        return dateTimeFormatter.print(timestamp);
+    public static int bytesToInt(byte[] array){
+        int value = 0;
+        value |= array[0] << 24;
+        value |= array[1] << 16;
+        value |= array[2] << 8;
+        value |= array[3];
+
+
+        return value;
+    }
+
+    public static byte[] intToBytes(int value){
+        byte[] bytes = new byte[4];
+
+        bytes[0] = (byte) (value >>> 24);
+        bytes[1] = (byte) (value >>> 16);
+        bytes[2] = (byte) (value >>> 8);
+        bytes[3] = (byte) (value);
+
+        return bytes;
     }
 
     public static byte[] toByteArray(List<String> strings)

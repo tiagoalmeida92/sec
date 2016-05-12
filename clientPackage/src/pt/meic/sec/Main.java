@@ -3,6 +3,7 @@ package pt.meic.sec;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,8 +14,21 @@ public class Main {
     private static Client client;
 
     public static void main(String[] args) {
+        if(args.length < 2){
+            out.println("args missing. send first replica port and faulty processes");
+        }
+
         displayCommands();
-        client = new Client(null, 64535);
+
+        int replicaPort = Integer.parseInt(args[0]);
+        int maxFaults = Integer.parseInt(args[1]);
+        int nReplicas = 3 * maxFaults + 1;
+        List<Integer> replicasPorts = new ArrayList<>();
+        for (int i = 0; i < nReplicas; i++) {
+            replicasPorts.add(replicaPort + i);
+        }
+        client = new Client(replicasPorts, maxFaults);
+
         Scanner scanner = new Scanner(System.in);
         while (true) {
             out.print(">");
