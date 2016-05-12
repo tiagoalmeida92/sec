@@ -1,6 +1,8 @@
 package Utils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,8 +32,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import sun.security.x509.X509CertImpl;
 
 /*
@@ -86,9 +91,9 @@ public class Security {
         return null;
     }
 
-    public static String ByteToHex(final byte[] hash) {
+    public static String ByteToHex(final byte[] byteArr) {
         Formatter formatter = new Formatter();
-        for (byte b : hash) {
+        for (byte b : byteArr) {
             formatter.format("%02x", b);
         }
         String result = formatter.toString();
@@ -183,25 +188,6 @@ public class Security {
         }
 
         return null;
-    }
-
-    public static boolean VerifyFreshness(String timestamp) {
-        DateTimeZone zone = DateTimeZone.forID("Europe/Lisbon");
-        DateTime currentDateTime = new DateTime(zone);
-
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-        Date dateToVerify = null;
-        try {
-            dateToVerify = format.parse(timestamp);
-        } catch (ParseException e) {
-            return false;
-        }
-        long diffInMillis = currentDateTime.getMillis() - dateToVerify.getTime();
-        if (diffInMillis > Constants.FRESHNESSTIMESTAMP) {
-            return false;
-        }
-        return true;
     }
 
     private static Set<X509Certificate> GetCACertificates(String... paths) throws CertificateException, FileNotFoundException {
@@ -396,4 +382,72 @@ public class Security {
                 (PKIXCertPathBuilderResult) builder.build(pkixParams);
         return result;
     }
+    
+    public static byte[] generateHMac(byte[] secretKey, byte[] data, String algorithm) {
+
+        SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
+
+        try {
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(signingKey);
+
+            return mac.doFinal(data);
+        }
+        catch(InvalidKeyException e) {
+            throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");
+        }
+        catch(NoSuchAlgorithmException e) {
+            throw new IllegalStateException("the system doesn't support algorithm " + algorithm, e);
+        }
+    }
+    
+    public static boolean verifyHMac(byte[] secretKey, byte[] data, byte[] expectedMac, String algorithm)
+    {
+    	SecretKeySpec signingKey = new SecretKeySpec(secretKey, algorithm);
+    	try {
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(signingKey);
+            byte[] macBytes = mac.doFinal(data);
+            return Utils.equals(macBytes,expectedMac);
+        }
+        catch(InvalidKeyException e) {
+            throw new IllegalArgumentException("invalid secret key provided (key not printed for security reasons!)");
+        }
+        catch(NoSuchAlgorithmException e) {
+            throw new IllegalStateException("the system doesn't support algorithm " + algorithm, e);
+        }
+    }
+
+	public static byte[] GenerateSecretKey() 
+	{	
+		KeyGenerator keyGen;
+		try {
+			keyGen = KeyGenerator.getInstance("AES");
+			keyGen.init(128);
+			SecretKey secretKey = keyGen.generateKey();
+			return secretKey.getEncoded();
+		} catch (NoSuchAlgorithmException e) {
+			return null;
+		}
+	}
+	
+	public static byte[] CreateAndOrGetSecretKeyFile(String path)
+	{
+		File file = new File(path);
+		byte[] myByteArray = new byte[(int) file.length()];
+		
+		BufferedInputStream reader = null;
+		try {
+			reader = new BufferedInputStream(new FileInputStream(file));
+			reader.read(myByteArray, 0, myByteArray.length);
+			reader.close();			
+			return myByteArray;
+		} catch (IOException e) {
+			byte[] data = Security.GenerateSecretKey();
+			Files.WriteFile(path, data);
+			return myByteArray;
+		}
+	}
+	
+	
 }

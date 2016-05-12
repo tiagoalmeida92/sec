@@ -4,13 +4,14 @@ import java.io.File;
 
 public class Constants {
 
-	public static final int PORT = 64535;
+	public static int PORT = 64535;
 	
 	//File paths
 	public static final String PKBLOCKEXTENSION = ".pkblock";
 	public static final String CBLOCKEXTENSION = ".cblock";
-	public static final String PKBLOCKPATH = new File("").getAbsolutePath()+"\\pkblocks\\";
-	public static final String CBLOCKPATH = new File("").getAbsolutePath()+"\\cblocks\\";
+	public static String PKBLOCKPATH = new File("").getAbsolutePath()+"\\"+PORT+"\\pkblocks\\";
+	public static String CBLOCKPATH = new File("").getAbsolutePath()+"\\"+PORT+"\\cblocks\\";
+	public static final String SECRETKEYFILE = "secret.key";
 	public static final String CERTIFICATESFILEPATH = new File("").getAbsolutePath()+"\\certificates.clients";
 	public static final String CERTIFICATESFILENAME = "certificates.clients";
 	
@@ -22,7 +23,7 @@ public class Constants {
 	public static final int PUBLIC_KEY_SIZE = 162;
 	public static final int CONTENT_BLOCK_ID_SIZE = 64;
 	public static final int BLOCK_HASH_SIZE = 64;
-	public static final int TIMESTAMP_SIZE = 23; //23 bytes -> yyyy-MM-dd HH:mm:ss.SSS
+	public static final int TIMESTAMP_SIZE = 4; //23 bytes -> yyyy-MM-dd HH:mm:ss.SSS
 	public static final String KEYSTOREEXTENSION = ".jks";
 	
 	// Client Dependability exception messages
@@ -54,6 +55,13 @@ public class Constants {
 	//Freshness - Counter replay attacks
 	public static final long FRESHNESSTIMESTAMP = 5000;
 
-	
+	//BYZANTINE METHOD TYPE
+	public static final String ACKTYPE = "put_k_ack";
+	public static final String WRITETYPE = "put_k";
+	public static final String READTYPE = "get";
+	public static final String VALUETYPE = "get_ack";
+	public static final String ADAPTED_ACKTYPE = "put_h_ack";
+	public static final String ADAPTED_WRITETYPE = "put_h";
+	public static final String DELIMITER = ",";
 	
 }

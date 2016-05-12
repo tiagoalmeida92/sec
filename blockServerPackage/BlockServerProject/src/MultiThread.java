@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -16,6 +17,18 @@ public class MultiThread implements Runnable{
 	private boolean isStopped = false;
 	private Thread runningThread = null;
 	private Worker worker = null;
+	
+	public MultiThread()
+	{	
+	}
+	
+	public MultiThread(int port)
+	{
+		serverPort = port;
+		Constants.PORT = port;
+        Constants.PKBLOCKPATH = new File("").getAbsolutePath()+"\\"+port+"\\pkblocks\\";
+        Constants.CBLOCKPATH = new File("").getAbsolutePath()+"\\"+port+"\\cblocks\\";
+	}
 	
 	public void run(){
         synchronized(this){

@@ -4,11 +4,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -24,21 +24,114 @@ import Utils.Security;
 import Utils.Utils;
 
 public class Service {
+	
+	//For the testsS3.java
+	public static boolean receivedTimestampForTestsS3;
+	public static boolean isBizantineSignature;
+	
+	public static String BizantinePutK(byte[] data, byte[] signature, PublicKey publicK)
+	{
+		final int fromIndex = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
+		int writerTimestamp, currentTimestamp=0;
+		String response = null;
+		try {	
+			writerTimestamp = Utils.bytesToInt(Arrays.copyOfRange(data, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE));
+				
+			String pkFileName = Security.GetPublicKeyHash(publicK);
+			byte[] storedData = Service.get(pkFileName);
+			if(storedData != null)
+				currentTimestamp = Utils.bytesToInt(
+						Arrays.copyOfRange(storedData, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE));
+			if(writerTimestamp > currentTimestamp)
+			{
+				response = Service.putK(data, signature, publicK);
+				//Begin TestsS3
+				if(receivedTimestampForTestsS3)
+					writerTimestamp = 0;
+				//End TestsS3
+				if(pkFileName.equals(response))
+					return Constants.ACKTYPE + Constants.DELIMITER +
+							writerTimestamp + Constants.DELIMITER + 
+							response;
+			}
+		} catch (NoSuchAlgorithmException e) {
+		}
+		return null;
+	}
+	
+	public static String BizantinePutH(byte[] data)
+	{
+		String response = Service.putH(data);
+		return Constants.ADAPTED_ACKTYPE + Constants.DELIMITER + response;
+	}
+	
+	public static String BizantineGet(String id, int rid)
+	{
+		BufferedInputStream reader = null;
+		try {
 
+			//Get ContentBlock data
+			byte[] data = new byte[Constants.CBLOCKLENGTH];
+			reader = new BufferedInputStream(new FileInputStream(Constants.CBLOCKPATH+id+Constants.CBLOCKEXTENSION));
+			reader.read(data, 0, data.length);
+			reader.close();
+			if(receivedTimestampForTestsS3)
+				rid = 0;
+			return Constants.VALUETYPE + Constants.DELIMITER + rid + Constants.DELIMITER + Utils.byteToHex(data);
+
+		} catch (FileNotFoundException e) {
+
+			//Get PublicKeyBlock data
+			String pkFilePath = Constants.PKBLOCKPATH+id+Constants.PKBLOCKEXTENSION;
+			File file = new File(pkFilePath);
+			if (file.exists())
+			{
+				byte[] data = new byte[(int) file.length()];
+				try {
+					reader = new BufferedInputStream(new FileInputStream(pkFilePath));
+					reader.read(data, 0, data.length);
+					reader.close();
+				} catch (FileNotFoundException e2) {
+					return null;
+				} catch (IOException e1) {
+					return null;
+				}
+				if(receivedTimestampForTestsS3)
+					rid = 0;
+				if(isBizantineSignature)
+				{
+					byte[] signature = Arrays.copyOfRange(data, 0, Constants.SIGNATURE_SIZE);
+					signature[Constants.SIGNATURE_SIZE-1] = 
+							(byte) (signature[Constants.SIGNATURE_SIZE-1] == 1 ? 0 : 1);
+					byte[] remaining = Arrays.copyOfRange(data, Constants.SIGNATURE_SIZE, data.length);
+					data = Utils.concat(signature, remaining);
+				}
+				return Constants.VALUETYPE + Constants.DELIMITER + rid + Constants.DELIMITER + Utils.byteToHex(data);
+			}
+			else
+				return null;
+
+		} catch (IOException e) {
+			return null;
+		} finally {
+			try {
+				if (reader != null)
+					reader.close();
+			} catch (IOException ex) {
+				return null;
+			}
+		}
+	}
+	
 	/*
 	 * S1
 	 */
 	public static String putK(byte[] data, byte[] signature, PublicKey publicK)
 	{
 		try {
-			final int fromIndex = Constants.SIGNATURE_SIZE + Constants.PUBLIC_KEY_SIZE;
-			final String srcTimestamp = new String(
-					Arrays.copyOfRange(data, fromIndex, fromIndex + Constants.TIMESTAMP_SIZE),"UTF-8");
-			if(!Security.VerifyFreshness(srcTimestamp))
-				return "[Integrity] Old request. Probably a replay attack.";
 			if(!Security.Verify(data, signature, publicK))
 				return "[Integrity] Integrity failure or bad public key.";
-		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException | UnsupportedEncodingException e) {
+		} catch (InvalidKeyException | NoSuchAlgorithmException | SignatureException e) {
 			return "[Integrity] Invalid key, encoding or signature exception.";
 		}
 

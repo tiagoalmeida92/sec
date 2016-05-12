@@ -1,1 +1,1 @@
-java -cp "bin;bin\*" ServerMain
+java -cp "bin;bin\*" BlockServerReplicasMain 62345 1
