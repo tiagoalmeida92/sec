@@ -55,7 +55,7 @@ public class ByzantineRegularRegister {
                 e.printStackTrace();
             }
         });
-        if(_readList.size() > (_replicas + _faults) / 2){
+        if(_readList.size() > 1){
             String highest = HighestHashMapTs(_readList);
             _readList.clear();
             byte[] finalRes = getReadResult(readType, highest);
@@ -72,15 +72,13 @@ public class ByzantineRegularRegister {
         int totalCalls;
         float neededQuorom;
         if(header.equals(Constants.PUT_PUBLIC_KEY_BLOCK)){
-            totalCalls = _faults * 3 + 1;
             neededQuorom = (float)(_replicas + _faults) / 2;
         }else {
             //PUT H self verifying
-            totalCalls = _faults + 1;
             neededQuorom = 0.5f;
         }
 
-        _processesPorts.parallelStream().limit(totalCalls).forEach(port -> {
+        _processesPorts.parallelStream().forEach(port -> {
             try {
                 AuthPerfectPointToPointLinks al = new AuthPerfectPointToPointLinks(port);
                 al.Send(data);
