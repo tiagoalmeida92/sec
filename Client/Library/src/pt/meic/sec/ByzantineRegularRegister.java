@@ -106,7 +106,7 @@ public class ByzantineRegularRegister {
 
     private byte[] getReadResult(ReadType type, String highest) {
         String res = highest.split(Constants.DELIMITER)[2];
-        return type == ReadType.PublicKeyBlock ? SecurityUtils.hexStringToByteArray(res) : res.getBytes();
+        return  SecurityUtils.hexStringToByteArray(res);
     }
 
     private boolean verifyReadResponse(byte[] result, ReadType readType, String id) {

@@ -41,6 +41,7 @@ public class Client {
             createSelfCertificate();
             PublicKeyBlock publicKeyBlock = new PublicKeyBlock(certificate.getPublicKey(), INITIAL_TIMESTAMP, new ArrayList<>());
             publicKeyBlockId = writePublicKeyBlock(publicKeyBlock);
+            System.out.println("User created with id " + publicKeyBlockId);
             if (!publicKeyBlockId.equals(SecurityUtils.Hash(certificate.getPublicKey().getEncoded()))) {
                 throw new DependabilityException(Constants.CERTIFICATE_TAMPERED);
             }
@@ -64,7 +65,7 @@ public class Client {
 
             //Pad file with 0s
             if (endIndex >= contentBlocks.size()) {
-                String contentBlockId = writeContentBlock(new byte[]{0});
+                String contentBlockId = writeContentBlock(new byte[Constants.CBLOCKLENGTH]);
                 while (endIndex >= contentBlocks.size()) {
                     contentBlocks.add(contentBlockId);
                 }
@@ -93,10 +94,9 @@ public class Client {
     }
 
 
-    public byte[] read(String publicKey, int position, int readSize) throws DependabilityException {
+    public byte[] read(String id, int position, int readSize) throws DependabilityException {
         try {
-            byte[] publicKeyBytes = SecurityUtils.hexStringToByteArray(publicKey);
-            PublicKeyBlock publicKeyBlock = getPublicKeyBlock(SecurityUtils.Hash(publicKeyBytes));
+            PublicKeyBlock publicKeyBlock = getPublicKeyBlock(id);
             List<String> contentBlockIds = publicKeyBlock.contentBlocks;
             int startIndex = position / Constants.CBLOCKLENGTH;
             int endIndex = startIndex + (readSize / Constants.CBLOCKLENGTH);

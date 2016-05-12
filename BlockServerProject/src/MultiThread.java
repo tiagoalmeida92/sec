@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -25,6 +26,8 @@ public class MultiThread implements Runnable{
 	{
 		serverPort = port;
 		Constants.PORT = port;
+        Constants.PKBLOCKPATH = new File("").getAbsolutePath()+"\\"+port+"\\pkblocks\\";
+        Constants.CBLOCKPATH = new File("").getAbsolutePath()+"\\"+port+"\\cblocks\\";
 	}
 	
 	public void run(){
